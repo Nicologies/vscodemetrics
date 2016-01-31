@@ -11,27 +11,27 @@ import org.jetbrains.annotations.NotNull;
 
 public class CodeMetricsPropertiesExtension extends AgentLifeCycleAdapter implements PositionAware {
 
-  @NotNull
-  private final MetricsExeSearcher mySearcher;
+    @NotNull
+    private final MetricsExeSearcher mySearcher;
 
-  public CodeMetricsPropertiesExtension(@NotNull final EventDispatcher<AgentLifeCycleListener> events,
-                                        @NotNull final MetricsExeSearcher searcher) {
-    mySearcher = searcher;
-    events.addListener(this);
-  }
+    public CodeMetricsPropertiesExtension(@NotNull final EventDispatcher<AgentLifeCycleListener> events,
+                                          @NotNull final MetricsExeSearcher searcher) {
+        mySearcher = searcher;
+        events.addListener(this);
+    }
 
-  @NotNull
-  public String getOrderId() {
-    return CodeMetricConstants.RunnerType;
-  }
+    @NotNull
+    public String getOrderId() {
+        return CodeMetricConstants.RunnerType;
+    }
 
-  @NotNull
-  public PositionConstraint getConstraint() {
-    return PositionConstraint.last();
-  }
+    @NotNull
+    public PositionConstraint getConstraint() {
+        return PositionConstraint.last();
+    }
 
-  @Override
-  public void agentInitialized(@NotNull final BuildAgent agent) {
-    mySearcher.search(agent.getConfiguration());
-  }
+    @Override
+    public void agentInitialized(@NotNull final BuildAgent agent) {
+        mySearcher.search(agent.getConfiguration());
+    }
 }

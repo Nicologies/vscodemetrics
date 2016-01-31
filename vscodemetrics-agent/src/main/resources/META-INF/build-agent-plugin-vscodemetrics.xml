@@ -4,7 +4,6 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
        default-autowire="constructor">
   <bean name="CodeMetricsPropertiesExtension" class="com.nicologies.vscodemetrics.CodeMetricsPropertiesExtension" />
-  <bean name="FxCopInspectionsProcessor" class="jetbrains.buildServer.fxcop.agent.FxCopDataProcessor" />
-  <bean name="FxCopRunner" class="jetbrains.buildServer.fxcop.agent.FxCopBuildServiceFactory" />
-  <bean name="FxCopSearcher" class="jetbrains.buildServer.fxcop.agent.FxCopSearcher"/>
+  <bean name="CodeMetricsRunner" class="com.nicologies.vscodemetrics.BuildServiceFactory" />
+  <bean name="MetricsExeSearcher" class="com.nicologies.vscodemetrics.MetricsExeSearcher"/>
 </beans>

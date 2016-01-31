@@ -10,6 +10,26 @@
          <source>target/teamcity-plugin.xml</source>
          <outputDirectory>/</outputDirectory>
      </file> 
+     <file>
+         <source>../vscodemetrics-agent/target/vscodemetrics.zip</source>
+         <outputDirectory>/agent</outputDirectory>
+     </file>
+     <file>
+         <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/VsCodeMetricsTransformer.exe</source>
+         <outputDirectory>/server</outputDirectory>
+     </file>
+     <file>
+         <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/MetricsTemplate.cshtml</source>
+         <outputDirectory>/server</outputDirectory>
+     </file>
+      <file>
+          <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/RazorEngine.dll</source>
+          <outputDirectory>/server</outputDirectory>
+      </file>
+      <file>
+          <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/System.Web.Razor.dll</source>
+          <outputDirectory>/server</outputDirectory>
+      </file>
   </files>
   <moduleSets>
     <moduleSet>
