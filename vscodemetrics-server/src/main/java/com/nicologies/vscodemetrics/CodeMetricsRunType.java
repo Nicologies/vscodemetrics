@@ -2,7 +2,7 @@ package com.nicologies.vscodemetrics;
 
 import com.nicologies.vscodemetrics.common.CodeMetricConstants;
 import com.nicologies.vscodemetrics.common.CodeMetricsVersion;
-import com.nicologies.vscodemetrics.common.SettingsDefaultValues;
+import com.nicologies.vscodemetrics.common.SettingsValues;
 import com.nicologies.vscodemetrics.common.SettingsKeys;
 import jetbrains.buildServer.requirements.Requirement;
 import jetbrains.buildServer.serverSide.PropertiesProcessor;
@@ -61,19 +61,21 @@ public class CodeMetricsRunType extends jetbrains.buildServer.serverSide.RunType
     @Override
     public Map<String, String> getDefaultRunnerProperties() {
         Map<String, String> parameters = new HashMap<String, String>();
-        parameters.put(SettingsKeys.Files, SettingsDefaultValues.FilesToInclude);
-        parameters.put(SettingsKeys.FilesToExclude, SettingsDefaultValues.FilesToExclude);
+        parameters.put(SettingsKeys.Files, "");
+        parameters.put(SettingsKeys.FilesToExclude, "");
         parameters.put(SettingsKeys.AdditionalOptions, "");
         parameters.put(SettingsKeys.AdditionalRefDir, "");
         parameters.put(SettingsKeys.IgnoreGeneratedCode, "true");
         parameters.put(SettingsKeys.SearchInGac, "true");
-        parameters.put(SettingsKeys.DetectionMode, SettingsDefaultValues.AutoDetection);
+        parameters.put(SettingsKeys.DetectionMode, SettingsValues.AutoDetection);
         parameters.put(SettingsKeys.Version, CodeMetricsVersion.not_specified.getDisplayName());
+        parameters.put(SettingsKeys.CompanyName, "");
+        parameters.put(SettingsKeys.FailOnAnalysisError, "true");
         return parameters;
     }
     @NotNull
     @Override
     public List<Requirement> getRunnerSpecificRequirements(@NotNull final Map<String, String> runParameters) {
-        return RequirementsUtil.getFxCopRequirements(runParameters);
+        return RequirementsUtil.getMetricsRequirements(runParameters);
     }
 }

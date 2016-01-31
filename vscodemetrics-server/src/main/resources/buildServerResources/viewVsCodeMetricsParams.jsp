@@ -26,6 +26,9 @@
 <div class="parameter">
   Assemblies to exclude: <strong><props:displayValue name="${constants.filesExcludeKey}" emptyValue="not specified"/></strong>
 </div>
+<div class="parameter">
+  Assemblies with company name starts with: <strong><props:displayValue name="${constants.companyNameKey}" emptyValue="not specified"/></strong>
+</div>
 
 <div class="parameter">
   Additional Cmd options: <strong><props:displayValue name="${constants.additionalOptionsKey}" emptyValue="not specified"/></strong>

@@ -56,7 +56,7 @@
     </tr>
 
   <tr id="versionInputSection" ${hideVersionInput}>
-    <th><label for="${constants.versionKey}">version: <bs:help file="FxCop" anchor="FxCopVersion"/></label></th>
+    <th><label for="${constants.versionKey}">version: <bs:help file="Metrics" anchor="MetricsVersion"/></label></th>
     <td>
       <props:selectProperty name="${constants.versionKey}">
         <c:forEach var="item" items="${constants.availableVersions}">
@@ -64,7 +64,7 @@
         </c:forEach>
       </props:selectProperty>
       <span class="error" id="error_${constants.versionKey}"></span>
-      <span class="smallNote">The FxCop version required by the build; the agent requirement will be created. <br/>
+      <span class="smallNote">The Visual Studio Code Metrics Power Tool version required by the build; the agent requirement will be created. <br/>
                               To use any version auto-detected on the agent side, select 'Any Detected'.</span>
     </td>
   </tr>
@@ -82,21 +82,32 @@
     <th>
       <label for="mod-files">Assemblies: </label></th>
     <td><span>
+      <c:set var="assemblyNameNote">Assembly file names relative to the checkout root separated by spaces.<br/>
+              Ant-like wildcards are supported.<br/>
+              Example: bin*.dll</c:set>
+      <c:set var="assemblyCompanyNote">Assembly that has company name starts with the above given companies.<br/>
+                   separate by space, case insensitive.<br/>
+                   Example: Microsoft Google</c:set>
       <props:multilineProperty name="${constants.filesKey}"
                                className="longField"
-                               linkTitle="Type assembly files or wildcards"
+                               linkTitle="Type assembly files or wildcards(e.g. bin\release\*.dll bin\release\*.exe)"
                                cols="55" rows="5"
                                expanded="true"
                                note="${note}"/>
-      <c:set var="note">Assembly file names relative to the checkout root separated by spaces.<br/>
-        Ant-like wildcards are supported.<br/>
-        Example: bin*.dll</c:set>
+
       <props:multilineProperty name="${constants.filesExcludeKey}"
                                className="longField"
-                               linkTitle="Exclude assembly files by wildcard"
+                               linkTitle="Exclude assembly files by wildcard(e.g. bin\release\system.*.dll"
                                cols="55" rows="5"
-                               expanded="false"
-                               note="${note}"/>
+                               expanded="true"
+                               note="${assemblyNameNote}"/>
+
+      <props:multilineProperty name="${constants.companyNameKey}"
+                               className="longField"
+                               linkTitle="Assemblies with company name starts with"
+                               cols="55" rows="5"
+                               expanded="true"
+                               note="${assemblyCompanyNote}"/>
       </span>
     </td>
   </tr>
@@ -144,7 +155,7 @@
       <props:checkboxProperty name="${constants.failOnAnalysisErrorKey}"/>
       <span class="error" id="error_${constants.failOnAnalysisErrorKey}"></span>
       <span class="smallNote">Fails build on analysis errors such as:<br/>
-        ANALYSIS_ERROR ASSEMBLY_LOAD_ERROR, ASSEMBLY_REFERENCES_ERROR, PROJECT_LOAD_ERROR, RULE_LIBRARY_LOAD_ERROR, UNKNOWN_ERROR, OUTPUT_ERROR
+        ANALYSIS_ERROR, TARGET_LOAD_ERROR, ASSEMBLY_REFERENCES_ERROR, COMMAND_LINE_SWITCH_ERROR, INITIALIZATION_ERROR:, UNKNOWN_ERROR, OUTPUT_ERROR
       </span>
     </td>
   </tr>

@@ -1,9 +1,8 @@
 package com.nicologies.vscodemetrics;
 
 import com.nicologies.vscodemetrics.common.CodeMetricsVersion;
-import com.nicologies.vscodemetrics.common.SettingsDefaultValues;
+import com.nicologies.vscodemetrics.common.SettingsValues;
 import com.nicologies.vscodemetrics.common.SettingsKeys;
-import org.hsqldb.lib.Set;
 import org.jetbrains.annotations.NotNull;
 
 public class SettingsBean {
@@ -44,7 +43,7 @@ public class SettingsBean {
 
     @NotNull
     public String getDetectionModeAuto() {
-        return SettingsDefaultValues.AutoDetection;
+        return SettingsValues.AutoDetection;
     }
 
     @NotNull
@@ -65,5 +64,19 @@ public class SettingsBean {
     @NotNull
     public String getFailOnAnalysisErrorKey() {
         return SettingsKeys.FailOnAnalysisError;
+    }
+
+    @NotNull
+    public String getDetectionModeManual() {
+        return SettingsValues.ManualDetection;
+    }
+    @NotNull
+    public String getAddtionalOptionsKey() {
+        return SettingsKeys.AdditionalOptions;
+    }
+
+    @NotNull
+    public String getCompanyNameKey(){
+        return SettingsKeys.CompanyName;
     }
 }

@@ -10,10 +10,11 @@ public interface SettingsKeys {
     String FailOnAnalysisError = "vscodemetrics.fail_on_analysis_error";
     String DetectionMode = "vscodemetrics.detection_mode";
 
-    String RootProperty = "system.VsCodeMetricsRoot";
-    String CmdFileVersionProperty = "system.vsCodeMetricsCmdFileVersion";
+    String RootProperty = "VsCodeMetricsRoot";
+    String CmdFileVersionProperty = "VsCodeMetricsCmdFileVersion";
 
     String Root = "vscodemetrics.root";
     String CmdBinary = "metrics.exe";
     String Version = "vscodemetrics.version";
+    String CompanyName = "vscodemetrics.company_name";
 }
