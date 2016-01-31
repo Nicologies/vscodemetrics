@@ -6,4 +6,5 @@
     <bean id="vsCodeMetricsTab" class="com.nicologies.vscodemetrics.CodeMetricsTab"></bean>
     <bean id="vsCodeMetricsRunType" class="com.nicologies.vscodemetrics.CodeMetricsRunType"></bean>
     <bean id="MetricsBuildListener" class="com.nicologies.vscodemetrics.MetricsReducer"></bean>
+    <bean class="com.nicologies.vscodemetrics.VsCodeMetricsController"></bean>
 </beans>
