@@ -1,0 +1,44 @@
+﻿@using System
+<div>
+    <table>
+        <tr>
+            <th>Module</th>
+            <th>Class</th>
+            <th>MaintainabilityIndex</th>
+            <th>CyclomaticComplexity</th>
+            <th>ClassCoupling</th>
+            <th>DepthOfInheritance</th>
+            <th>LinesOfCode</th>
+        </tr>
+        @{
+            foreach (var target in @Model.Targets)
+            {
+                foreach (var module in target.Modules)
+                {
+                    <tr>
+                        <td>@module.Name</td>
+                        <td>Overall</td>
+                        @foreach (var metric in module.Metrics)
+                        {
+                            <td>@metric.Value</td>
+                        }
+                    </tr>
+                    foreach (var ns in module.Namespaces)
+                    {
+                        foreach (var cls in ns.Types)
+                        {
+                            <tr>
+                                <td>@module.Name</td>
+                                <td>@cls.Name</td>
+                                @foreach (var metric in cls.Metrics)
+                                {
+                                    <td>@metric.Value</td>
+                                }
+                            </tr>
+                        }
+                    }
+                }
+            }
+        }
+</table>
+</div>
