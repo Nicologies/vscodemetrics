@@ -1,6 +1,7 @@
 ﻿@using System
 <div>
-    <table>
+    <table id="vscodemetrics_results" class="display" cellspacing="0" width="100%">
+        <thead>
         <tr>
             <th>Module</th>
             <th>Class</th>
@@ -10,19 +11,12 @@
             <th>DepthOfInheritance</th>
             <th>LinesOfCode</th>
         </tr>
+        </thead>
         @{
             foreach (var target in @Model.Targets)
             {
                 foreach (var module in target.Modules)
                 {
-                    <tr>
-                        <td>@module.Name</td>
-                        <td>Overall</td>
-                        @foreach (var metric in module.Metrics)
-                        {
-                            <td>@metric.Value</td>
-                        }
-                    </tr>
                     foreach (var ns in module.Namespaces)
                     {
                         foreach (var cls in ns.Types)
@@ -40,5 +34,5 @@
                 }
             }
         }
-</table>
+    </table>
 </div>
