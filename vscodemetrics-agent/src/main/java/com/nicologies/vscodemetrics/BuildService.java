@@ -7,8 +7,7 @@ import jetbrains.buildServer.BuildProblemData;
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.agent.BuildFinishedStatus;
 import jetbrains.buildServer.agent.artifacts.ArtifactsWatcher;
-import jetbrains.buildServer.agent.runner.BuildServiceAdapter;
-import jetbrains.buildServer.agent.runner.ProgramCommandLine;
+import jetbrains.buildServer.agent.runner.*;
 import jetbrains.buildServer.messages.DefaultMessagesInfo;
 import jetbrains.buildServer.util.AntPatternFileFinder;
 import jetbrains.buildServer.util.FileUtil;
@@ -18,15 +17,11 @@ import org.apache.commons.io.FilenameUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class BuildService extends BuildServiceAdapter {
     private final ArtifactsWatcher myArtifactsWatcher;
     private File myOutputDirectory;
-    private File myXmlReportFile;
 
     public BuildService(final ArtifactsWatcher artifactsWatcher) {
         myArtifactsWatcher = artifactsWatcher;
@@ -41,9 +36,6 @@ public class BuildService extends BuildServiceAdapter {
             if (!myOutputDirectory.mkdirs()) {
                 throw new RuntimeException("Unable to create temp output directory " + myOutputDirectory);
             }
-
-            myXmlReportFile = new File(myOutputDirectory, CodeMetricConstants.XmlResultFile);
-
         } catch (IOException e) {
             final String message = "Unable to create temporary file in " +
                     getBuildTempDirectory() + " for vscodemetrics: " +
@@ -57,10 +49,38 @@ public class BuildService extends BuildServiceAdapter {
     @Override
     public void beforeProcessStarted() throws RunBuildException {
         getLogger().progressMessage("Running Visual Studio Code Metrics");
-    }
 
-    private void importInspectionResults() throws Exception {
-        getLogger().progressMessage("Importing inspection results");
+        final Map<String, String> runParameters = getRunnerParameters();
+
+        List<File> files;
+        try {
+            files = matchFiles();
+        } catch (Exception e) {
+            throw new RunBuildException("Error while collecting files", e);
+        }
+
+        if (files.size() == 0) {
+            throw new RunBuildException("No files matched the pattern");
+        }
+
+        for(File file : files){
+
+            File outputFile = new File(myOutputDirectory, file.getName() + CodeMetricConstants.XmlResultFile);
+
+            final CommandLineBuilder commandLineBuilder = new CommandLineBuilder(runParameters,
+                    getBuildParameters().getSystemProperties(), outputFile, getLogger());
+            List<String> args = commandLineBuilder.getArguments(file);
+            args.add(0, commandLineBuilder.getExecutablePath());
+            String argsString = StringUtil.join(" ", args);
+            getLogger().message(argsString);
+            ProcessBuilder pb = new ProcessBuilder(args);
+            ProcessInvoker p = new ProcessInvoker(pb);
+            int exitCode = p.invoke();
+            if(exitCode != 0){
+                getLogger().error("unable to analyze file " + file);
+                getLogger().error(p.stdErr());
+            }
+        }
     }
 
     @NotNull
@@ -95,19 +115,18 @@ public class BuildService extends BuildServiceAdapter {
             }
         }
 
-        if (myXmlReportFile.exists()) {
-            myArtifactsWatcher.addNewArtifactsPath(myXmlReportFile.getPath() + "=>" + ArtifactsUtil.getInternalArtifactPath(""));
+        AntPatternFileFinder finder = new AntPatternFileFinder(new String[]{"*" + CodeMetricConstants.XmlResultFile },
+                new String[0], SystemInfo.isFileSystemCaseSensitive);
 
-            try {
-                importInspectionResults();
-            } catch (Exception e) {
-                getLogger().error("Exception while importing results: " + e);
-                failMessage = "Visual Studio Code Metrics results import error";
-            }
-        } else {
-            if (failMessage == null) {
+        try {
+            File[] files = finder.findFiles(myOutputDirectory);
+            myArtifactsWatcher.addNewArtifactsPath(new File(myOutputDirectory, "*" + CodeMetricConstants.XmlResultFile).getPath() + "=>" + ArtifactsUtil.getInternalArtifactPath(""));
+            if (files.length == 0) {
                 failMessage = "Output xml is not found";
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+            failMessage = "Output xml is not found";
         }
 
         if (failMessage != null) {
@@ -126,47 +145,15 @@ public class BuildService extends BuildServiceAdapter {
 
     @NotNull
     public ProgramCommandLine makeProgramCommandLine() throws RunBuildException {
-        final Map<String, String> runParameters = getRunnerParameters();
-
-        List<String> files;
-        try {
-            files = matchFiles();
-        } catch (Exception e) {
-            throw new RunBuildException("Error while collecting files", e);
-        }
-
-        if (files.size() == 0) {
-            throw new RunBuildException("No files matched the pattern");
-        }
-
-        final List<String> finalFiles = files;
-
-        final CommandLineBuilder commandLineBuilder = new CommandLineBuilder(runParameters,
-                getBuildParameters().getSystemProperties(), myXmlReportFile, getLogger());
-        return new ProgramCommandLine() {
-            @NotNull
-            public String getExecutablePath() throws RunBuildException {
-                return commandLineBuilder.getExecutablePath();
-            }
-
-            @NotNull
-            public String getWorkingDirectory() throws RunBuildException {
-                return getCheckoutDirectory().getPath();
-            }
-
-            @NotNull
-            public List<String> getArguments() throws RunBuildException {
-                return commandLineBuilder.getArguments(finalFiles);
-            }
-
-            @NotNull
-            public Map<String, String> getEnvironment() throws RunBuildException {
-                return getBuildParameters().getEnvironmentVariables();
-            }
-        };
+        List<String > args = new Vector<String>();
+        args.add("/c");
+        args.add("echo");
+        args.add("Finished running code metrics");
+        return new SimpleProgramCommandLine(getBuildParameters().getEnvironmentVariables(),
+                getCheckoutDirectory().getPath(), "cmd", args);
     }
 
-    private List<String> matchFiles() throws Exception {
+    private List<File> matchFiles() throws Exception {
         final Map<String, String> runParameters = getRunnerParameters();
 
         final AntPatternFileFinder finder = new AntPatternFileFinder(
@@ -178,8 +165,13 @@ public class BuildService extends BuildServiceAdapter {
         getLogger().logMessage(DefaultMessagesInfo.createTextMessage("Matched assembly files:"));
 
         String[] companyNames = splitFileWildcards(runParameters.get(SettingsKeys.CompanyName));
-        final List<String> result = new ArrayList<String>(files.length);
+        final List<File> result = new ArrayList<File>(files.length);
+        HashSet<String> fileNames = new HashSet<String>();
         for (File file : files) {
+            if(fileNames.contains(file.getName())){
+                continue;
+            }
+            fileNames.add(file.getName());
             if(companyNames.length > 0) {
                 String compName = getCompanyName(file);
                 boolean valid = isCompanyNameMatches(companyNames, compName);
@@ -192,7 +184,7 @@ public class BuildService extends BuildServiceAdapter {
             }
             final String relativeName = FileUtil.getRelativePath(getWorkingDirectory(), file);
 
-            result.add(relativeName);
+            result.add(file);
             getLogger().logMessage(DefaultMessagesInfo.createTextMessage("   Found a matching file: " + relativeName));
         }
 

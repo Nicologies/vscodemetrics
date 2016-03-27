@@ -50,11 +50,6 @@ public class CodeMetricsTab extends ViewLogTab {
                     "      This page is not automatically refreshed while the build is running.\n" +
                     "      <a class=\"btn btn_mini\" onclick=\"$('buildResults').refresh(null, 'runningBuildRefresh=1'); return false\" href=\"#\">Refresh</a>\n" +
                     "    </div>");// _pluginDescriptor.getPluginResourcesPath("/notReady.jsp"));
-            Date finishedDate = build.getFinishDate();
-
-            if(finishedDate != null && getDateDiff(finishedDate, new Date(), TimeUnit.MINUTES) > 1){
-                MetricsReducer.generateHtmlReportAsync(build);
-            }
         }
     }
 
@@ -68,5 +63,15 @@ public class CodeMetricsTab extends ViewLogTab {
     public static long getDateDiff(Date date1, Date date2, TimeUnit timeUnit) {
         long diffInMillies = date2.getTime() - date1.getTime();
         return timeUnit.convert(diffInMillies, TimeUnit.MILLISECONDS);
+    }
+    protected boolean isAvailable(@NotNull final HttpServletRequest request, @NotNull final SBuild build) {
+        Boolean available = isHtmlAvailable(build);
+        if(!available) {
+            Date finishedDate = build.getFinishDate();
+            if (finishedDate != null && getDateDiff(finishedDate, new Date(), TimeUnit.MINUTES) > 1) {
+                MetricsReducer.generateHtmlReportAsync(build);
+            }
+        }
+        return available;
     }
 }

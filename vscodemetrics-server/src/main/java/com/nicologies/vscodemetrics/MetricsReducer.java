@@ -1,6 +1,7 @@
 package com.nicologies.vscodemetrics;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.SystemInfo;
 import com.nicologies.vscodemetrics.common.ArtifactsUtil;
 import com.nicologies.vscodemetrics.common.CodeMetricConstants;
 import com.nicologies.vscodemetrics.common.PathUtils;
@@ -8,11 +9,14 @@ import com.nicologies.vscodemetrics.common.ProcessInvoker;
 import jetbrains.buildServer.serverSide.BuildServerAdapter;
 import jetbrains.buildServer.serverSide.SBuild;
 import jetbrains.buildServer.serverSide.SBuildServer;
+import jetbrains.buildServer.serverSide.SRunningBuild;
+import jetbrains.buildServer.util.AntPatternFileFinder;
 import jetbrains.buildServer.web.reportTabs.ReportTabUtil;
 import org.apache.commons.io.FilenameUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -25,13 +29,23 @@ public class MetricsReducer extends BuildServerAdapter{
     private static HashSet<Long> _generatingReports = new HashSet<Long>();
 
     @Override
-    public void buildArtifactsChanged(@NotNull final SBuild build) {
-        boolean xmlResultReady = ReportTabUtil.isAvailable(build,
-                ArtifactsUtil.getInternalArtifactPath(CodeMetricConstants.XmlResultFile));
+    public void buildFinished(@NotNull final SRunningBuild build) {
+        LOG.info("Build is finished");
+        AntPatternFileFinder finder = new AntPatternFileFinder(new String[]{"*" + CodeMetricConstants.XmlResultFile},
+                new String[0], SystemInfo.isFileSystemCaseSensitive);
+        boolean xmlResultReady = false;
+        try {
+            File[] files = finder.findFiles(new File(build.getArtifactsDirectory(), ArtifactsUtil.getInternalArtifactPath("")));
+            xmlResultReady = files.length > 0;
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOG.error("Unable to get code analysis result", e);
+        }
         if(xmlResultReady && !_generatingReports.contains(build.getBuildId())){
             generateHtmlReportAsync(build);
         }
     }
+
 
     public static void generateHtmlReportAsync(final SBuild build){
         final long buildId = build.getBuildId();
@@ -55,13 +69,13 @@ public class MetricsReducer extends BuildServerAdapter{
             String pluginDir = PathUtils.GetExecutionPath();
             String transformerExe = FilenameUtils.concat(pluginDir, "VsCodeMetricsTransformer.exe");
 
-            String xmlFullPath = new File(artifactDir, ArtifactsUtil.getInternalArtifactPath(CodeMetricConstants.XmlResultFile))
+            String xmlDir = new File(artifactDir, ArtifactsUtil.getInternalArtifactPath(""))
                     .getAbsolutePath();
 
             File myHtmlReportFile = new File(artifactDir,
                     ArtifactsUtil.getInternalArtifactPath(CodeMetricConstants.ReportFile));
 
-            ProcessBuilder pb = new ProcessBuilder(transformerExe, xmlFullPath, myHtmlReportFile.getAbsolutePath());
+            ProcessBuilder pb = new ProcessBuilder(transformerExe, xmlDir, myHtmlReportFile.getAbsolutePath());
             ProcessInvoker invoker = new ProcessInvoker(pb);
             int exitCode = invoker.invoke();
             if(exitCode != 0){

@@ -4,10 +4,13 @@ import com.nicologies.vscodemetrics.common.SettingsValues;
 import com.nicologies.vscodemetrics.common.SettingsKeys;
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.agent.SimpleBuildLogger;
+import jetbrains.buildServer.util.FileUtil;
 import jetbrains.buildServer.util.StringUtil;
+import org.apache.commons.compress.compressors.FileNameUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -34,7 +37,6 @@ public class CommandLineBuilder {
         final String detectionMode = myRunParameters.get(SettingsKeys.DetectionMode);
         if (detectionMode.equals(SettingsValues.AutoDetection)) {
             relativePathToMetricsExe = mySystemParameters.get(SettingsKeys.RootProperty);
-            myLogger.message("Used auto detected VisualStudio Code Metrics home directory");
         } else {
             relativePathToMetricsExe = myRunParameters.get(SettingsKeys.Root);
             myLogger.message("Used custom VisualStudio Code Metrics home directory");
@@ -48,7 +50,7 @@ public class CommandLineBuilder {
     }
 
     @NotNull
-    public List<String> getArguments(List<String> files) throws RunBuildException {
+    public List<String> getArguments(File fileToAnalyze) throws RunBuildException {
         List<String> arguments = new Vector<String>();
 
         // Search in GAC
@@ -76,14 +78,22 @@ public class CommandLineBuilder {
         }
 
         // Files to be processed
-        if (files != null) {
-            for (String file : files) {
-                arguments.add("/f:" + file);
+        if (fileToAnalyze != null) {
+            try {
+                arguments.add("/f:" + fileToAnalyze.getCanonicalPath());
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new RunBuildException(e);
             }
         }
 
         // Output file
-        arguments.add("/out:" + myXmlReportFile.getPath());
+        try {
+            arguments.add("/out:" + myXmlReportFile.getCanonicalPath());
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RunBuildException(e);
+        }
 
         return arguments;
     }

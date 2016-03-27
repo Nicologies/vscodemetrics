@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 using RazorEngine;
 using RazorEngine.Templating;
@@ -31,36 +28,49 @@ namespace VsCodeMetricsTransformer
                 var assemblyLoc = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 var template = File.ReadAllText(
                     Path.Combine(assemblyLoc, "MetricsTemplate.cshtml"));
-                using (var stream = File.OpenRead(args[0]))
+                var files = new DirectoryInfo(args[0]).EnumerateFiles("*VsCodeMetricsReport.xml");
+                var combinedRpt = new CodeMetricsReport();
+                foreach (var file in files)
                 {
-                    var xmlSeri = new XmlSerializer(typeof (CodeMetricsReport));
-                    var report = xmlSeri.Deserialize(stream) as CodeMetricsReport;
                     try
                     {
-                        using (var output = new StreamWriter(args[1]))
+                        using (var stream = file.OpenRead())
                         {
-                            AmendOverallMetricsToBeAverage(report);
-                            const string metricstemplate = "metricsTemplate";
-                            output.Write(Engine.Razor.RunCompile(template, metricstemplate,
-                                typeof (CodeMetricsReport),
-                                report));
+                            var xmlSeri = new XmlSerializer(typeof (CodeMetricsReport));
+                            var report = xmlSeri.Deserialize(stream) as CodeMetricsReport;
+                            combinedRpt.Targets.AddRange(report.Targets);
                         }
                     }
                     catch (Exception ex)
                     {
-                        Console.Error.Write("Failed to render html" + ex);
-                        try
-                        {
-                            File.Delete(args[1]);
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-                        Environment.Exit(-2);
+                        Console.Error.Write($"Failed to parse: {file.Name}" + ex);
                     }
                 }
+                try
+                {
+                    using (var output = new StreamWriter(args[1]))
+                    {
+                        const string metricstemplate = "metricsTemplate";
+                        output.Write(Engine.Razor.RunCompile(template, metricstemplate,
+                            typeof(CodeMetricsReport),
+                            combinedRpt));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.Write("Failed to save metrics data" + ex);
+                    try
+                    {
+                        File.Delete(args[1]);
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+                    Environment.Exit(-2);
+                }
             }
+
             catch (Exception ex)
             {
                 Console.Error.Write(ex.ToString());
