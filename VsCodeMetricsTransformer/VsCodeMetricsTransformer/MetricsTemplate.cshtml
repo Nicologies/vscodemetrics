@@ -15,11 +15,11 @@
         @{
             foreach (var target in @Model.Targets)
             {
-                foreach (var module in target.Modules)
+                foreach (var module in target.Modules.OrderBy(m => int.Parse(m.Metrics[0].Value)))
                 {
-                    foreach (var ns in module.Namespaces)
+                    foreach (var ns in module.Namespaces.OrderBy(m => int.Parse(m.Metrics[0].Value)))
                     {
-                        foreach (var cls in ns.Types)
+                        foreach (var cls in ns.Types.OrderBy(m => int.Parse(m.Metrics[0].Value)))
                         {
                             <tr>
                                 <td>@module.Name</td>
