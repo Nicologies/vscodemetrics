@@ -1,5 +1,5 @@
 (function($) {
     $(function(){
-        $("#vscodemetrics_results").DataTable();
+        $("#vscodemetrics_results").dataTable().rowGrouping();
     });
 })(jQuery);
