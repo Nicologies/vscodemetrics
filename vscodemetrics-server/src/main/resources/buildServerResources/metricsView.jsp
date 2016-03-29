@@ -13,20 +13,7 @@
       <a class="btn btn_mini" onclick="$('buildResults').refresh(null, 'runningBuildRefresh=1'); return false" href="#">Save</a>
     </div>
 --%>
-    <c:url value='${teamcityPluginResourcesPath}/DataTables/datatables.css' var='datatablesCss'/>
-    <link rel="stylesheet" type="text/css" href="${datatablesCss}">
-    <style>
-    .group {
-        background-color: #d3d3d3;
-    }
-    </style>
     ${html}
-    <c:url value='${teamcityPluginResourcesPath}/jquery-datatables-row-grouping/js/jquery.dataTables.rowGrouping.js' var='groupJs'/>
-    <script src='${groupJs}'></script>
-    <c:url value='${teamcityPluginResourcesPath}/DataTables/datatables.js' var='datatablesJs'/>
-    <script src='${datatablesJs}'></script>
-    <c:url value='${teamcityPluginResourcesPath}/datatabliser.js' var='datatabliserJs'/>
-    <script src='${datatabliserJs}'></script>
 </c:if>
 
 <c:if test="${not empty notReady}">

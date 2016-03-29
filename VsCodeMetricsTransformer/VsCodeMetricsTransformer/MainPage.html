@@ -1,0 +1,45 @@
+﻿<link rel='stylesheet' type='text/css' href='${teamcityPluginResourcesPath}/DataTables/datatables.css' />
+<style>
+    .group {
+        background-color: #d3d3d3;
+    }
+</style>
+
+<div>
+    <h1>Assemblies</h1>
+    <table id="vscodemetrics_modules" class="display" cellspacing="0" width="100%">
+        {TableBodyOfModules}
+    </table>
+
+    <h1>Top 50 Least Maintainable Classes</h1>
+    <table id="vscodemetrics_worstclasses" class="display" cellspacing="0" width="100%">
+        {TableBodyOfWorstClasses}
+    </table>
+
+    <h1>Top 100 Least Maintainable Methods</h1>
+    <table id="vscodemetrics_worstmethods" class="display" cellspacing="0" width="100%">
+        {TableBodyOfWorstMethods}
+    </table>
+</div>
+
+<script src='${teamcityPluginResourcesPath}/DataTables/datatables.js'></script>
+<script src='${teamcityPluginResourcesPath}/jquery-datatables-row-grouping/js/jquery.dataTables.rowGrouping.js'></script>
+<script type="text/javascript">
+    (function ($) {
+        $(function () {
+            $("#vscodemetrics_modules").dataTable({
+                "order": [],
+                "lengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+                "iDisplayLength": 5
+            });
+            $("#vscodemetrics_worstclasses").dataTable({
+                "order": [],
+                "iDisplayLength": 10
+            });
+            $("#vscodemetrics_worstmethods").dataTable({
+                "order": [],
+                "iDisplayLength": 50 
+            });
+        });
+    })(jQuery);
+</script>

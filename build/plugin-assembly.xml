@@ -19,17 +19,9 @@
          <outputDirectory>/server</outputDirectory>
      </file>
      <file>
-         <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/MetricsTemplate.cshtml</source>
+         <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/MainPage.html</source>
          <outputDirectory>/server</outputDirectory>
      </file>
-      <file>
-          <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/RazorEngine.dll</source>
-          <outputDirectory>/server</outputDirectory>
-      </file>
-      <file>
-          <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/System.Web.Razor.dll</source>
-          <outputDirectory>/server</outputDirectory>
-      </file>
   </files>
   <moduleSets>
     <moduleSet>

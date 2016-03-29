@@ -37,8 +37,15 @@ public class CodeMetricsTab extends ViewLogTab {
         if(isHtmlAvailable(build)) {
             File filePath = new File(build.getArtifactsDirectory(), getAvailableReportPage(build));
             String fileContent = null;
-            try {
+            try{
                 fileContent = new String(Files.readAllBytes(filePath.toPath()), StandardCharsets.UTF_8);
+
+                String currentFolder = "/repository/download/" + build.getBuildTypeExternalId().toString()
+                        +"/" + build.getBuildId() + ":id/" + ArtifactsUtil.getInternalArtifactFolder();
+
+                fileContent = fileContent
+                        .replace("${teamcityPluginResourcesPath}", _pluginDescriptor.getPluginResourcesPath())
+                        .replace("${currentFolder}", currentFolder);
             } catch (IOException e) {
                 LOG.error("unable to read file", e);
             }
