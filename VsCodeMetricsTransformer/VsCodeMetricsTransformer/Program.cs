@@ -18,15 +18,30 @@ namespace VsCodeMetricsTransformer
     class MetricBase
     {
         public string Module { get; set; }
-        public string MaintainabilityIndex { get; set; }
-        public string CyclomaticComplexity { get; set; }
-        public string ClassCoupling { get; set; }
-        public string LinesOfCode { get; set; }
+        public double MaintainabilityIndex { get; set; }
+        public double CyclomaticComplexity { get; set; }
+        public double ClassCoupling { get; set; }
+        public int LinesOfCode { get; set; }
+
+        public virtual MetricBase FormatDecimalPoints()
+        {
+            MaintainabilityIndex = Math.Round(MaintainabilityIndex, 2);
+            CyclomaticComplexity = Math.Round(CyclomaticComplexity, 2);
+            ClassCoupling = Math.Round(ClassCoupling, 2);
+            return this;
+        }
     }
 
     class AssemblyMetric : MetricBase
     {
-        public string DepthOfInheritance { get; set; }
+        public double DepthOfInheritance { get; set; }
+
+        public override MetricBase FormatDecimalPoints()
+        {
+            base.FormatDecimalPoints();
+            DepthOfInheritance = Math.Round(DepthOfInheritance, 2);
+            return this;
+        }
     }
 
     class ClassMetric : AssemblyMetric
@@ -126,7 +141,7 @@ namespace VsCodeMetricsTransformer
                 var assemblyLoc = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 var mainHtml = File.ReadAllText(Path.Combine(assemblyLoc, "MainPage.html"));
                 var files = new DirectoryInfo(args[0]).EnumerateFiles("*VsCodeMetricsReport.xml");
-                var modules = new List<Module>();
+                var rawModules = new List<Module>();
                 foreach (var file in files)
                 {
                     try
@@ -141,7 +156,7 @@ namespace VsCodeMetricsTransformer
                             {
                                 continue;
                             }
-                            modules.Add(module);
+                            rawModules.Add(module);
                         }
                     }
                     catch (Exception ex)
@@ -149,19 +164,24 @@ namespace VsCodeMetricsTransformer
                         Console.Error.Write($"Failed to parse: {file.Name}" + ex);
                     }
                 }
-                var moduleTableRows = new StringBuilder(TableHeaderForModule);
+                var modules = new List<AssemblyMetric>();
                 var classes = new List<ClassMetric>();
                 var methods = new List<MethodMetric>();
-                foreach (var module in modules.OrderBy(m => int.Parse(m.Metrics[0].Value)))
+
+                foreach (var module in rawModules)
                 {
+                    if (module.Metrics.Last().Value == "0")
+                    {// line of code is 0
+                        continue;
+                    }
                     var moduleMetric = new AssemblyMetric
                     {
                         Module = module.Name,
-                        MaintainabilityIndex = module.Metrics[0].Value,
-                        CyclomaticComplexity = module.Metrics[1].Value,
-                        ClassCoupling = module.Metrics[2].Value,
-                        DepthOfInheritance = module.Metrics[3].Value,
-                        LinesOfCode = module.Metrics[4].Value
+                        MaintainabilityIndex = 0,
+                        CyclomaticComplexity = 0,
+                        ClassCoupling = 0,
+                        DepthOfInheritance = 0,
+                        LinesOfCode = 0
                     };
                     var clsCount = 0;
                     if (module.Namespaces.Any())
@@ -169,60 +189,96 @@ namespace VsCodeMetricsTransformer
                         foreach (var cls in module.Namespaces.SelectMany(n => n.Types))
                         {
                             ++clsCount;
-                            classes.Add(new ClassMetric()
+                            var clsMetric = new ClassMetric()
                             {
                                 Module = module.Name,
                                 Class = cls.Name,
-                                MaintainabilityIndex = cls.Metrics[0].Value,
-                                CyclomaticComplexity = cls.Metrics[1].Value,
-                                ClassCoupling = cls.Metrics[2].Value,
-                                DepthOfInheritance = cls.Metrics[3].Value,
-                                LinesOfCode = cls.Metrics[4].Value,
-                            });
-                            foreach (var method in cls.Members)
+                                MaintainabilityIndex = 0,
+                                CyclomaticComplexity = 0,
+                                ClassCoupling = 0,
+                                DepthOfInheritance = int.Parse(cls.Metrics[3].Value),
+                                LinesOfCode = 0
+                            };
+
+                            var memberCount = 0;
+                            foreach (var method in cls.Members.Where(m => m.Name != ("InitializeComponent() : void")))
                             {
-                                methods.Add(new MethodMetric()
+                                memberCount++;
+                                var methodMetric = new MethodMetric()
                                 {
-                                    Module=module.Name,
+                                    Module = module.Name,
                                     Class = cls.Name,
                                     MethodName = method.Name,
-                                    MaintainabilityIndex = method.Metrics[0].Value,
-                                    CyclomaticComplexity = method.Metrics[1].Value,
-                                    ClassCoupling = method.Metrics[2].Value,
-                                    LinesOfCode = method.Metrics[3].Value,
-                                });
+                                    MaintainabilityIndex = int.Parse(method.Metrics[0].Value),
+                                    CyclomaticComplexity = int.Parse(method.Metrics[1].Value),
+                                    ClassCoupling = int.Parse(method.Metrics[2].Value),
+                                    LinesOfCode = int.Parse(method.Metrics[3].Value),
+                                };
+                                methods.Add(methodMetric);
+                                clsMetric.MaintainabilityIndex += methodMetric.MaintainabilityIndex;
+                                clsMetric.CyclomaticComplexity += methodMetric.CyclomaticComplexity;
+                                clsMetric.ClassCoupling += methodMetric.ClassCoupling;
+                                clsMetric.LinesOfCode += methodMetric.LinesOfCode;
                             }
+
+                            if (memberCount != 0)
+                            {
+                                clsMetric.MaintainabilityIndex /= memberCount;
+                                clsMetric.CyclomaticComplexity /= memberCount;
+                                clsMetric.ClassCoupling /= memberCount;
+                            }
+                            else
+                            {
+                                clsMetric.MaintainabilityIndex = 100;
+                            }
+                            classes.Add(clsMetric);
+
+                            moduleMetric.MaintainabilityIndex += clsMetric.MaintainabilityIndex;
+                            moduleMetric.ClassCoupling += clsMetric.ClassCoupling;
+                            moduleMetric.CyclomaticComplexity += clsMetric.CyclomaticComplexity;
+                            moduleMetric.DepthOfInheritance += clsMetric.DepthOfInheritance;
+                            moduleMetric.LinesOfCode += clsMetric.LinesOfCode;
                         };
                     }
                     if (clsCount != 0)
                     {
-                        moduleMetric.ClassCoupling = (Convert.ToDouble(moduleMetric.ClassCoupling) / clsCount)
-                            .ToString("0.00");
-
-                        moduleMetric.CyclomaticComplexity =
-                            (Convert.ToDouble(moduleMetric.CyclomaticComplexity) / clsCount).ToString("0.00");
+                        moduleMetric.MaintainabilityIndex /= clsCount;
+                        moduleMetric.ClassCoupling /= clsCount;
+                        moduleMetric.CyclomaticComplexity /= clsCount;
+                        moduleMetric.DepthOfInheritance /= clsCount;
                     }
-                    var moduleMetricsRow = RowTemplateForModule.Inject(moduleMetric);
+                    else
+                    {
+                        moduleMetric.MaintainabilityIndex = 100;
+                    }
+                    modules.Add(moduleMetric);
+                }
+
+                var moduleTableRows = new StringBuilder(TableHeaderForModule);
+                foreach (var moduleMetric in modules.OrderBy(r => r.MaintainabilityIndex))
+                {
+                    var moduleMetricsRow = RowTemplateForModule.Inject(moduleMetric.FormatDecimalPoints());
                     moduleTableRows.AppendLine(moduleMetricsRow);
                 }
                 var mainPage = new StringBuilder(mainHtml);
                 mainPage.Replace("{TableBodyOfModules}", moduleTableRows.ToString());
 
-                var worstClasses = classes.OrderBy(c => int.Parse(c.MaintainabilityIndex)).Take(50);
+                var worstClasses = classes.OrderBy(c => c.MaintainabilityIndex).Take(100).ToList();
                 var tableOfWorstClasses = new StringBuilder(TableHeaderForClass);
                 foreach (var cls in worstClasses)
                 {
-                    var row = RowTemplateForClass.Inject(cls);
+                    var row = RowTemplateForClass.Inject(cls.FormatDecimalPoints());
                     tableOfWorstClasses.AppendLine(row);
                 }
                 mainPage.Replace("{TableBodyOfWorstClasses}", tableOfWorstClasses.ToString());
-                var worstMethods = methods.OrderBy(c => int.Parse(c.MaintainabilityIndex)).Take(100);
+                var worstMethods = methods.OrderBy(c => c.MaintainabilityIndex).Take(100).ToList();
                 var tableOfWorstMethods = new StringBuilder(TableHeaderForMethod);
                 foreach (var method in worstMethods)
                 {
-                    var row = RowTemplateForMethod.Inject(method);
+                    var row = RowTemplateForMethod.Inject(method.FormatDecimalPoints());
                     tableOfWorstMethods.AppendLine(row);
                 }
+
                 mainPage.Replace("{TableBodyOfWorstMethods}", tableOfWorstMethods.ToString());
                 try
                 {
