@@ -270,6 +270,11 @@ namespace VsCodeMetricsTransformer
                     var row = RowTemplateForClass.Inject(cls.FormatDecimalPoints());
                     tableOfWorstClasses.AppendLine(row);
                 }
+                var worstClassesAreInModules = worstClasses.GroupBy(r => r.Module)
+                    .OrderByDescending(x => x.Count()).Take(5)
+                    .Select(x => $"<li>{x.Key}: {x.Count()} classes</li>");
+                var strWorstClassesAreInModules = string.Join("", worstClassesAreInModules);
+                mainPage.Replace("{WorstClassesAreInModules}", strWorstClassesAreInModules);
                 mainPage.Replace("{TableBodyOfWorstClasses}", tableOfWorstClasses.ToString());
                 var worstMethods = methods.OrderBy(c => c.MaintainabilityIndex).Take(100).ToList();
                 var tableOfWorstMethods = new StringBuilder(TableHeaderForMethod);
@@ -279,6 +284,11 @@ namespace VsCodeMetricsTransformer
                     tableOfWorstMethods.AppendLine(row);
                 }
 
+                var worstMethodsAreInModules = worstMethods.GroupBy(r => r.Module)
+                    .OrderByDescending(x => x.Count()).Take(5)
+                    .Select(x => $"<li>{x.Key}: {x.Count()} methods</li>");
+                var strWorstMethodsAreInModules = string.Join("", worstMethodsAreInModules);
+                mainPage.Replace("{WorstMethodsAreInModules}", strWorstMethodsAreInModules);
                 mainPage.Replace("{TableBodyOfWorstMethods}", tableOfWorstMethods.ToString());
                 try
                 {
