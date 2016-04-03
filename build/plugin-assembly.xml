@@ -22,6 +22,10 @@
          <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/MainPage.html</source>
          <outputDirectory>/server</outputDirectory>
      </file>
+      <file>
+          <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/CsvHelper.dll</source>
+          <outputDirectory>/server</outputDirectory>
+      </file>
   </files>
   <moduleSets>
     <moduleSet>

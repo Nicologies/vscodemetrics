@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Xml.Serialization;
+using CsvHelper;
 using RawMetric = VsCodeMetricsTransformer.MetricsMetric;
 using Target = VsCodeMetricsTransformer.CodeMetricsReportTargetsTarget;
 using Module = VsCodeMetricsTransformer.CodeMetricsReportTargetsTargetModulesModule;
@@ -295,6 +297,17 @@ namespace VsCodeMetricsTransformer
                     using (var output = new StreamWriter(args[1]))
                     {
                         output.Write(mainPage);
+                    }
+                    var dir = Path.GetDirectoryName(args[1]);
+                    var csv = Path.Combine(dir, "FullList.csv");
+                    using (var stream = new StreamWriter(csv))
+                    {
+                        var writer = new CsvWriter(stream);
+                        writer.WriteHeader<MethodMetric>();
+                        foreach (var method in methods)
+                        {
+                            writer.WriteRecord(method);
+                        }
                     }
                 }
                 catch (Exception ex)
