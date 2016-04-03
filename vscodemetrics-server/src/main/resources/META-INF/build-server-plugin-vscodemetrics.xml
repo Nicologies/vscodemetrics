@@ -5,5 +5,4 @@
        default-autowire="constructor">
     <bean id="vsCodeMetricsTab" class="com.nicologies.vscodemetrics.CodeMetricsTab"></bean>
     <bean id="vsCodeMetricsRunType" class="com.nicologies.vscodemetrics.CodeMetricsRunType"></bean>
-    <bean id="MetricsBuildListener" class="com.nicologies.vscodemetrics.MetricsReducer"></bean>
 </beans>

@@ -8,6 +8,7 @@ import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.agent.BuildFinishedStatus;
 import jetbrains.buildServer.agent.artifacts.ArtifactsWatcher;
 import jetbrains.buildServer.agent.runner.*;
+import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.messages.DefaultMessagesInfo;
 import jetbrains.buildServer.util.AntPatternFileFinder;
 import jetbrains.buildServer.util.FileUtil;
@@ -81,6 +82,10 @@ public class BuildService extends BuildServiceAdapter {
                 getLogger().warning(p.stdErr());
             }
         }
+        getLogger().progressMessage("Transforming Code Metrics result to Teamcity");
+
+        MetricsTransformer transformer = new MetricsTransformer(Loggers.AGENT);
+        transformer.generateHtmlReport(myOutputDirectory);
     }
 
     @NotNull
@@ -120,7 +125,7 @@ public class BuildService extends BuildServiceAdapter {
 
         try {
             File[] files = finder.findFiles(myOutputDirectory);
-            myArtifactsWatcher.addNewArtifactsPath(new File(myOutputDirectory, "*" + CodeMetricConstants.XmlResultFile).getPath() + "=>" + ArtifactsUtil.getInternalArtifactPath(""));
+            myArtifactsWatcher.addNewArtifactsPath(new File(myOutputDirectory, "*").getPath() + "=>" + ArtifactsUtil.getInternalArtifactPath(""));
             if (files.length == 0) {
                 failMessage = "Output xml is not found";
             }
