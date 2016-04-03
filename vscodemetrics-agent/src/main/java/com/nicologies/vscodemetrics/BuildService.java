@@ -77,8 +77,8 @@ public class BuildService extends BuildServiceAdapter {
             ProcessInvoker p = new ProcessInvoker(pb);
             int exitCode = p.invoke();
             if(exitCode != 0){
-                getLogger().error("unable to analyze file " + file);
-                getLogger().error(p.stdErr());
+                getLogger().warning("unable to analyze file " + file);
+                getLogger().warning(p.stdErr());
             }
         }
     }
