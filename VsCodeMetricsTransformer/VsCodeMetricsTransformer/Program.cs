@@ -203,7 +203,7 @@ namespace VsCodeMetricsTransformer
                             };
 
                             var memberCount = 0;
-                            foreach (var method in cls.Members.Where(m => m.Name != ("InitializeComponent() : void")))
+                            foreach (var method in cls.Members.Where(m => !InIgnoreList(m, cls)))
                             {
                                 memberCount++;
                                 var methodMetric = new MethodMetric()
@@ -330,6 +330,17 @@ namespace VsCodeMetricsTransformer
                 Console.Error.Write(ex.ToString());
                 Environment.Exit(-2);
             }
+        }
+
+        private static bool InIgnoreList(Member m, ClassType cls)
+        {
+            if (m.Name == ("InitializeComponent() : void"))
+            {
+                return true;
+            }
+            var isNHibernateMapping = (m.Name.EndsWith("Mapping()") || m.Name.EndsWith("Mappings()"))
+                && cls.Name == m.Name.Replace("()", "");
+            return isNHibernateMapping;
         }
     }
 }
