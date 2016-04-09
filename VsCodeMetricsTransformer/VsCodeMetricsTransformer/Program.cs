@@ -20,111 +20,24 @@ namespace VsCodeMetricsTransformer
 {
     class Program
     {
-        private static readonly string TableHeaderForClass = $@"
-<thead>
-    <tr>
-        <th>{nameof(ModuleMetric.Module)}</th>
-        <th>{nameof(ClassMetric.Class)}</th>
-        <th>{nameof(ModuleMetric.MaintainabilityIndex)}</th>
-        <th>{nameof(ModuleMetric.CyclomaticComplexity)}</th>
-        <th>{nameof(ModuleMetric.ClassCoupling)}</th>
-        <th>{nameof(ModuleMetric.DepthOfInheritance)}</th>
-        <th>{nameof(ModuleMetric.LinesOfCode)}</th>
-    </tr>
-</thead>
-";
-
-        private static readonly string TableHeaderForModule = $@"
-<thead>
-    <tr>
-        <th>{nameof(ModuleMetric.Module)}</th>
-        <th>{nameof(ModuleMetric.MaintainabilityIndex)}</th>
-        <th>{nameof(ModuleMetric.CyclomaticComplexity)}</th>
-        <th>{nameof(ModuleMetric.ClassCoupling)}</th>
-        <th>{nameof(ModuleMetric.DepthOfInheritance)}</th>
-        <th>{nameof(ModuleMetric.LinesOfCode)}</th>
-    </tr>
-</thead>
-";
-
-        private static readonly string TableHeaderForMethod = $@"
-<thead>
-    <tr>
-        <th>{nameof(ModuleMetric.Module)}</th>
-        <th>{nameof(ClassMetric.Class)}</th>
-        <th>{nameof(MethodMetric.MethodName)}</th>
-        <th>{nameof(ModuleMetric.MaintainabilityIndex)}</th>
-        <th>{nameof(ModuleMetric.CyclomaticComplexity)}</th>
-        <th>{nameof(ModuleMetric.ClassCoupling)}</th>
-        <th>{nameof(ModuleMetric.LinesOfCode)}</th>
-    </tr>
-</thead>
-";
-
-        private static readonly string RowTemplateForModule = $@"
-<tr>
-    <td>{{{nameof(ModuleMetric.Module)}}}</td>
-    <td>{{{nameof(ModuleMetric.MaintainabilityIndex)}}}</td>
-    <td>{{{nameof(ModuleMetric.CyclomaticComplexity)}}}</td>
-    <td>{{{nameof(ModuleMetric.ClassCoupling)}}}</td>
-    <td>{{{nameof(ModuleMetric.DepthOfInheritance)}}}</td>
-    <td>{{{nameof(ModuleMetric.LinesOfCode)}}}</td>
-</tr>
-";
-        private static readonly string RowTemplateForClass = $@"
-<tr>
-    <td>{{{nameof(ModuleMetric.Module)}}}</td>
-    <td>{{{nameof(ClassMetric.Class)}}}</td>
-    <td>{{{nameof(ModuleMetric.MaintainabilityIndex)}}}</td>
-    <td>{{{nameof(ModuleMetric.CyclomaticComplexity)}}}</td>
-    <td>{{{nameof(ModuleMetric.ClassCoupling)}}}</td>
-    <td>{{{nameof(ModuleMetric.DepthOfInheritance)}}}</td>
-    <td>{{{nameof(ModuleMetric.LinesOfCode)}}}</td>
-</tr>
-";
-        private static readonly string RowTemplateForMethod = $@"
-<tr>
-    <td>{{{nameof(ModuleMetric.Module)}}}</td>
-    <td>{{{nameof(ClassMetric.Class)}}}</td>
-    <td>{{{nameof(MethodMetric.MethodName)}}}</td>
-    <td>{{{nameof(ModuleMetric.MaintainabilityIndex)}}}</td>
-    <td>{{{nameof(ModuleMetric.CyclomaticComplexity)}}}</td>
-    <td>{{{nameof(ModuleMetric.ClassCoupling)}}}</td>
-    <td>{{{nameof(ModuleMetric.LinesOfCode)}}}</td>
-</tr>
-";
+       
         private static string _tempDirToUnzipMetricsResults;
 
         private static void Main(string[] args)
         {
-            if (args.Length != 2)
-            {
-                Environment.Exit(-1);
-            }
-            _tempDirToUnzipMetricsResults = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            VerifyArguments(args);
             try
             {
-                var assemblyLoc = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                var mainHtml = File.ReadAllText(Path.Combine(assemblyLoc, "MainPage.html"));
-                Directory.CreateDirectory(_tempDirToUnzipMetricsResults);
-                var metricResultDir = _tempDirToUnzipMetricsResults;
-                if (args[0].EndsWith(".zip"))
-                {
-                    ZipFile.ExtractToDirectory(args[0], _tempDirToUnzipMetricsResults);
-                }
-                else
-                {
-                    metricResultDir = args[0];
-                }
+                var metricResultDir = ExtractMetricsResultsIfZipped(args[0]);
                 var rawModules = LoadRawMetricsFromFolder(metricResultDir);
                 var transformedMetrics = new TransformedMetrics();
                 TransformMetrics(rawModules, transformedMetrics);
-                var template = new StringBuilder(mainHtml);
-                FillModuleMetrics(transformedMetrics, template);
-                FillWorstClasses(transformedMetrics, template);
-                FillWorstMethods(transformedMetrics, template);
+                var mainHtmlTemplate = new StringBuilder(Templates.GetMainHtmlTemplate());
+                FillModuleMetrics(transformedMetrics, mainHtmlTemplate);
+                FillWorstClasses(transformedMetrics, mainHtmlTemplate);
+                FillWorstMethods(transformedMetrics, mainHtmlTemplate);
                 var folderToSaveFile = args[1];
-                WriteToMetricsResult(folderToSaveFile, template);
+                WriteToMetricsResult(folderToSaveFile, mainHtmlTemplate);
                 SaveFullListOfTheMetricsResults(folderToSaveFile, transformedMetrics);
             }
 
@@ -134,6 +47,30 @@ namespace VsCodeMetricsTransformer
                 ExitProgram(exitCode: 2);
             }
             ExitProgram(exitCode: 0);
+        }
+
+        private static string ExtractMetricsResultsIfZipped(string metricsResultFileOrFolder)
+        {
+            _tempDirToUnzipMetricsResults = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(_tempDirToUnzipMetricsResults);
+            var metricResultDir = _tempDirToUnzipMetricsResults;
+            if (metricsResultFileOrFolder.EndsWith(".zip"))
+            {
+                ZipFile.ExtractToDirectory(metricsResultFileOrFolder, _tempDirToUnzipMetricsResults);
+            }
+            else
+            {
+                metricResultDir = metricsResultFileOrFolder;
+            }
+            return metricResultDir;
+        }
+
+        private static void VerifyArguments(string[] args)
+        {
+            if (args.Length != 2)
+            {
+                Environment.Exit(-1);
+            }
         }
 
         private static void SaveFullListOfTheMetricsResults(string folderToSaveFile, 
@@ -196,10 +133,10 @@ namespace VsCodeMetricsTransformer
         private static void FillWorstMethods(TransformedMetrics transformedMetrics, StringBuilder template)
         {
             var worstMethods = transformedMetrics.Methods.OrderBy(c => c.MaintainabilityIndex).Take(100).ToList();
-            var tableOfWorstMethods = new StringBuilder(TableHeaderForMethod);
+            var tableOfWorstMethods = new StringBuilder(Templates.TableHeaderForMethod);
             foreach (var method in worstMethods)
             {
-                var row = RowTemplateForMethod.Inject(method.FormatDecimalPoints());
+                var row = Templates.RowTemplateForMethod.Inject(method.FormatDecimalPoints());
                 tableOfWorstMethods.AppendLine(row);
             }
 
@@ -214,10 +151,10 @@ namespace VsCodeMetricsTransformer
         private static void FillWorstClasses(TransformedMetrics transformedMetrics, StringBuilder template)
         {
             var worstClasses = transformedMetrics.Classes.OrderBy(c => c.MaintainabilityIndex).Take(100).ToList();
-            var tableOfWorstClasses = new StringBuilder(TableHeaderForClass);
+            var tableOfWorstClasses = new StringBuilder(Templates.TableHeaderForClass);
             foreach (var cls in worstClasses)
             {
-                var row = RowTemplateForClass.Inject(cls.FormatDecimalPoints());
+                var row = Templates.RowTemplateForClass.Inject(cls.FormatDecimalPoints());
                 tableOfWorstClasses.AppendLine(row);
             }
             var worstClassesAreInModules = worstClasses.GroupBy(r => r.Module)
@@ -230,10 +167,10 @@ namespace VsCodeMetricsTransformer
 
         private static void FillModuleMetrics(TransformedMetrics transformedMetrics, StringBuilder template)
         {
-            var moduleTableRows = new StringBuilder(TableHeaderForModule);
+            var moduleTableRows = new StringBuilder(Templates.TableHeaderForModule);
             foreach (var moduleMetric in transformedMetrics.Modules.OrderBy(r => r.MaintainabilityIndex))
             {
-                var moduleMetricsRow = RowTemplateForModule.Inject(moduleMetric.FormatDecimalPoints());
+                var moduleMetricsRow = Templates.RowTemplateForModule.Inject(moduleMetric.FormatDecimalPoints());
                 moduleTableRows.AppendLine(moduleMetricsRow);
             }
             template.Replace("{TableBodyOfModules}", moduleTableRows.ToString());

@@ -50,6 +50,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Templates.cs" />
     <Compile Include="Transformed\ModuleMetric.cs" />
     <Compile Include="Transformed\ClassMetric.cs" />
     <Compile Include="Transformed\MethodMetric.cs" />
