@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -138,11 +138,23 @@ namespace VsCodeMetricsTransformer
             {
                 Environment.Exit(-1);
             }
+            var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            int exitCode = 0;
             try
             {
                 var assemblyLoc = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 var mainHtml = File.ReadAllText(Path.Combine(assemblyLoc, "MainPage.html"));
-                var files = new DirectoryInfo(args[0]).EnumerateFiles("*VsCodeMetricsReport.xml");
+                Directory.CreateDirectory(tempDir);
+                var metricResultDir = tempDir;
+                if (args[0].EndsWith(".zip"))
+                {
+                    ZipFile.ExtractToDirectory(args[0], tempDir);
+                }
+                else
+                {
+                    metricResultDir = args[0];
+                }
+                var files = new DirectoryInfo(metricResultDir).EnumerateFiles("*VsCodeMetricsReport.xml");
                 var rawModules = new List<Module>();
                 foreach (var file in files)
                 {
@@ -173,7 +185,8 @@ namespace VsCodeMetricsTransformer
                 foreach (var module in rawModules)
                 {
                     if (module.Metrics.Last().Value == "0")
-                    {// line of code is 0
+                    {
+// line of code is 0
                         continue;
                     }
                     var moduleMetric = new AssemblyMetric
@@ -240,7 +253,7 @@ namespace VsCodeMetricsTransformer
                             moduleMetric.CyclomaticComplexity += clsMetric.CyclomaticComplexity;
                             moduleMetric.DepthOfInheritance += clsMetric.DepthOfInheritance;
                             moduleMetric.LinesOfCode += clsMetric.LinesOfCode;
-                        };
+                        }
                     }
                     if (clsCount != 0)
                     {
@@ -321,15 +334,23 @@ namespace VsCodeMetricsTransformer
                     {
                         // ignored
                     }
-                    Environment.Exit(-2);
+                    exitCode = 1;
                 }
             }
 
             catch (Exception ex)
             {
                 Console.Error.Write(ex.ToString());
-                Environment.Exit(-2);
+                exitCode = 2;
             }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, recursive: true);
+                }
+            }
+            Environment.Exit(exitCode);
         }
 
         private static bool InIgnoreList(Member m, ClassType cls)

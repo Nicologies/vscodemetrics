@@ -85,7 +85,7 @@ public class BuildService extends BuildServiceAdapter {
         getLogger().progressMessage("Transforming Code Metrics result to Teamcity");
 
         MetricsTransformer transformer = new MetricsTransformer(Loggers.AGENT);
-        transformer.generateHtmlReport(myOutputDirectory);
+        transformer.generateHtmlReport(myOutputDirectory, myOutputDirectory);
     }
 
     @NotNull
@@ -125,7 +125,12 @@ public class BuildService extends BuildServiceAdapter {
 
         try {
             File[] files = finder.findFiles(myOutputDirectory);
-            myArtifactsWatcher.addNewArtifactsPath(new File(myOutputDirectory, "*").getPath() + "=>" + ArtifactsUtil.getInternalArtifactPath(""));
+            myArtifactsWatcher.addNewArtifactsPath(new File(myOutputDirectory, "*.xml").getPath()
+                    + "=>" + ArtifactsUtil.getInternalArtifactPath(CodeMetricConstants.CompressedMetricFile));
+            myArtifactsWatcher.addNewArtifactsPath(new File(myOutputDirectory, "FullList.csv").getPath()
+                    + "=>" + ArtifactsUtil.getInternalArtifactPath("FullList.zip"));
+            myArtifactsWatcher.addNewArtifactsPath(new File(myOutputDirectory, "*.jsp").getPath()
+                    + "=>" + ArtifactsUtil.getInternalArtifactPath(""));
             if (files.length == 0) {
                 failMessage = "Output xml is not found";
             }

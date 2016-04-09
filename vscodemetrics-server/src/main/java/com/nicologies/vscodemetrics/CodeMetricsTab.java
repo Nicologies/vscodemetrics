@@ -78,8 +78,9 @@ public class CodeMetricsTab extends ViewLogTab {
             Date finishedDate = build.getFinishDate();
             if (finishedDate != null && getDateDiff(finishedDate, new Date(), TimeUnit.MINUTES) > 1) {
                 MetricsTransformer transformer = new MetricsTransformer(jetbrains.buildServer.log.Loggers.SERVER);
-                File codeMetricsXmlDir = new File(build.getArtifactsDirectory(), ArtifactsUtil.getInternalArtifactPath(""));
-                transformer.generateHtmlReportAsync(build.getBuildId(), codeMetricsXmlDir);
+                File codeMetricsZip = new File(build.getArtifactsDirectory(), ArtifactsUtil.getInternalArtifactPath(CodeMetricConstants.CompressedMetricFile));
+                File outputDir = new File(build.getArtifactsDirectory(), ArtifactsUtil.getInternalArtifactPath(""));
+                transformer.generateHtmlReportAsync(build.getBuildId(), codeMetricsZip, outputDir);
             }
         }
         return available;

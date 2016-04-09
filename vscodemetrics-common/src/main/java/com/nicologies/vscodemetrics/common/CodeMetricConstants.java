@@ -4,4 +4,5 @@ public interface CodeMetricConstants {
     String RunnerType = "VsCodeMetrics";
     String ReportFile = "VsCodeMetricsReport.jsp";
     String XmlResultFile = ".VsCodeMetricsReport.xml";
+    String CompressedMetricFile = "VsCodeMetrics.zip";
 }
