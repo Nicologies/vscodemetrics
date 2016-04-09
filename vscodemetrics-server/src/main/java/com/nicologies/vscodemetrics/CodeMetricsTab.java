@@ -3,7 +3,6 @@ package com.nicologies.vscodemetrics;
 import com.intellij.openapi.diagnostic.Logger;
 import com.nicologies.vscodemetrics.common.ArtifactsUtil;
 import com.nicologies.vscodemetrics.common.CodeMetricConstants;
-import com.nicologies.vscodemetrics.common.MetricsTransformer;
 import jetbrains.buildServer.serverSide.SBuild;
 import jetbrains.buildServer.serverSide.SBuildServer;
 import jetbrains.buildServer.web.openapi.PagePlaces;
@@ -77,10 +76,8 @@ public class CodeMetricsTab extends ViewLogTab {
         if(!available) {
             Date finishedDate = build.getFinishDate();
             if (finishedDate != null && getDateDiff(finishedDate, new Date(), TimeUnit.MINUTES) > 1) {
-                MetricsTransformer transformer = new MetricsTransformer(jetbrains.buildServer.log.Loggers.SERVER);
-                File codeMetricsZip = new File(build.getArtifactsDirectory(), ArtifactsUtil.getInternalArtifactPath(CodeMetricConstants.CompressedMetricFile));
-                File outputDir = new File(build.getArtifactsDirectory(), ArtifactsUtil.getInternalArtifactPath(""));
-                transformer.generateHtmlReportAsync(build.getBuildId(), codeMetricsZip, outputDir);
+                MetricsProcessor metricsProcessor = new MetricsProcessor(myServer);;
+                metricsProcessor.ProcessAsync(build);
             }
         }
         return available;

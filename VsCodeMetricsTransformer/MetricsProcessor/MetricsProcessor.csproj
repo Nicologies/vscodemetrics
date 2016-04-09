@@ -4,15 +4,13 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B0BA9199-5814-4375-A18D-1A40DED9AEBE}</ProjectGuid>
+    <ProjectGuid>{1FCAEEA1-EAFA-47A9-A9E4-9B15B8910AA2}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>VsCodeMetricsTransformer</RootNamespace>
-    <AssemblyName>VsCodeMetricsTransformer</AssemblyName>
+    <RootNamespace>MetricsProcessor</RootNamespace>
+    <AssemblyName>MetricsProcessor</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -54,8 +52,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MetricsReporter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StringInjectExtension.cs" />
+    <Compile Include="Templates.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -63,9 +64,14 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MetricsDefinitions\MetricsDefinitions.csproj">
-      <Project>{87772d9f-f7a3-4199-8da2-5f7be9fae39b}</Project>
+      <Project>{87772D9F-F7A3-4199-8DA2-5F7BE9FAE39B}</Project>
       <Name>MetricsDefinitions</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="MainPage.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

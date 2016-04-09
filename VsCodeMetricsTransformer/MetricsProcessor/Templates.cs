@@ -2,7 +2,7 @@
 using System.Reflection;
 using MetricsDefinitions;
 
-namespace VsCodeMetricsTransformer
+namespace MetricsProcessor
 {
     class Templates
     {

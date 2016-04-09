@@ -15,32 +15,14 @@ public class MetricsTransformer{
         this._logger = logger;
     }
 
-    private static HashSet<Long> _generatingReports = new HashSet<Long>();
-
-    public void generateHtmlReportAsync(final long buildId, final File codeMetricsXmlDirOrZip, final File outputDir){
-        synchronized (_generatingReports) {
-            _generatingReports.add(buildId);
-        }
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                generateHtmlReport(codeMetricsXmlDirOrZip, outputDir);
-                synchronized (_generatingReports) {
-                    _generatingReports.remove(buildId);
-                }
-            }
-        });
-        t.start();
-    }
-    public void generateHtmlReport(File codeMetricsXmlDirOrZip, File outputDir){
+    public void Transform(File codeMetricsXmlDirOrZip, File outputFile){
         try {
             String pluginDir = PathUtils.GetExecutionPath();
             String transformerExe = FilenameUtils.concat(pluginDir, "VsCodeMetricsTransformer.exe");
 
-            File myHtmlReportFile = new File(outputDir, CodeMetricConstants.ReportFile);
-
-            ProcessBuilder pb = new ProcessBuilder(transformerExe, codeMetricsXmlDirOrZip.getAbsolutePath(),
-                    myHtmlReportFile.getAbsolutePath());
+            ProcessBuilder pb = new ProcessBuilder(transformerExe,
+                    "-i", codeMetricsXmlDirOrZip.getAbsolutePath(),
+                    "-o", outputFile.getAbsolutePath());
             ProcessInvoker invoker = new ProcessInvoker(pb);
             int exitCode = invoker.invoke();
             if(exitCode != 0){

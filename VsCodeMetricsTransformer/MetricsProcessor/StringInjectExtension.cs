@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace VsCodeMetricsTransformer
+namespace MetricsProcessor
 {
     internal static class StringInjectExtension
     {

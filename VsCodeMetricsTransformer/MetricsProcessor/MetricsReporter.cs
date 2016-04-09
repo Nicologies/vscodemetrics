@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using MetricsDefinitions;
 
-namespace VsCodeMetricsTransformer
+namespace MetricsProcessor
 {
     class MetricsReporter
     {
@@ -23,7 +21,7 @@ namespace VsCodeMetricsTransformer
             var worstMethodsAreInModules = worstMethods.GroupBy(r => r.Module)
                 .OrderByDescending(x => x.Count()).Take(5)
                 .Select(x => $"<li>{x.Key}: {x.Count()} methods</li>");
-            var strWorstMethodsAreInModules = String.Join("", worstMethodsAreInModules);
+            var strWorstMethodsAreInModules = string.Join("", worstMethodsAreInModules);
             template.Replace("{WorstMethodsAreInModules}", strWorstMethodsAreInModules);
             template.Replace("{TableBodyOfWorstMethods}", tableOfWorstMethods.ToString());
         }
@@ -56,14 +54,16 @@ namespace VsCodeMetricsTransformer
             template.Replace("{TableBodyOfModules}", moduleTableRows.ToString());
         }
 
-        public static bool WriteToMetricsResult(string folderToSaveFile, StringBuilder template)
+        public static bool WriteToMetricsResult(string outputFile, StringBuilder template)
         {
+            var tempFile = outputFile + ".tmp";
             try
             {
-                using (var output = new StreamWriter(folderToSaveFile))
+                using (var output = new StreamWriter(tempFile, append: false))
                 {
                     output.Write(template);
                 }
+                File.Move(tempFile, outputFile);
                 return true;
             }
             catch (Exception ex)
@@ -71,7 +71,7 @@ namespace VsCodeMetricsTransformer
                 Console.Error.Write("Failed to save metrics data" + ex);
                 try
                 {
-                    File.Delete(folderToSaveFile);
+                    File.Delete(outputFile);
                 }
                 catch
                 {

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Text;
 using System.Xml.Serialization;
+using CommandLine;
+using CommandLine.Text;
 using CsvHelper;
 using MetricsDefinitions;
 using Module = MetricsDefinitions.CodeMetricsReportTargetsTargetModulesModule;
@@ -13,29 +14,40 @@ using Member = MetricsDefinitions.CodeMetricsReportTargetsTargetModulesModuleNam
 
 namespace VsCodeMetricsTransformer
 {
+    class Options
+    {
+        [Option('i', "input", Required = true,
+            HelpText = "Input zip file or folder to be processed.")]
+        public string InputFile { get; set; }
+
+        [Option('o', "output", Required = true, HelpText = "output file name")]
+        public string OutputFile { get; set; }
+
+        [HelpOption]
+        public string GetUsage()
+        {
+            return HelpText.AutoBuild(this,
+              current => HelpText.DefaultParsingErrorsHandler(this, current));
+        }
+    }
     class Program
     {
         private static string _tempDirToUnzipMetricsResults;
 
         private static void Main(string[] args)
         {
-            VerifyArguments(args);
+            var options = new Options();
+            if (!Parser.Default.ParseArguments(args, options))
+            {
+                Environment.Exit(1);
+            }
             try
             {
-                var metricResultDir = ExtractMetricsResultsIfZipped(args[0]);
+                var metricResultDir = ExtractMetricsResultsIfZipped(options.InputFile);
                 var rawModules = LoadRawMetricsFromFolder(metricResultDir);
                 var transformedMetrics = new TransformedMetrics();
                 TransformMetrics(rawModules, transformedMetrics);
-                var mainHtmlTemplate = new StringBuilder(Templates.GetMainHtmlTemplate());
-                MetricsReporter.FillModuleMetrics(transformedMetrics, mainHtmlTemplate);
-                MetricsReporter.FillWorstClasses(transformedMetrics, mainHtmlTemplate);
-                MetricsReporter.FillWorstMethods(transformedMetrics, mainHtmlTemplate);
-                var folderToSaveFile = args[1];
-                if (!MetricsReporter.WriteToMetricsResult(folderToSaveFile, mainHtmlTemplate))
-                {
-                    ExitProgram(exitCode: 1);
-                }
-                SaveFullListOfTheMetricsResults(folderToSaveFile, transformedMetrics);
+                SaveFullListOfTheMetricsResults(options.OutputFile, transformedMetrics);
             }
 
             catch (Exception ex)
@@ -62,22 +74,12 @@ namespace VsCodeMetricsTransformer
             return metricResultDir;
         }
 
-        private static void VerifyArguments(string[] args)
-        {
-            if (args.Length != 2)
-            {
-                Environment.Exit(-1);
-            }
-        }
-
-        private static void SaveFullListOfTheMetricsResults(string folderToSaveFile, 
+        private static void SaveFullListOfTheMetricsResults(string outputFile, 
             TransformedMetrics transformedMetrics)
         {
             try
             {
-                var dir = Path.GetDirectoryName(folderToSaveFile);
-                var csv = Path.Combine(dir, "FullList.csv");
-                using (var stream = new StreamWriter(csv))
+                using (var stream = new StreamWriter(outputFile))
                 {
                     var writer = new CsvWriter(stream);
                     writer.WriteHeader<MethodMetric>();
@@ -89,7 +91,7 @@ namespace VsCodeMetricsTransformer
             }
             catch (Exception ex)
             {
-                Console.Error.Write("Failed to save full list csv" + ex);
+                Console.Error.Write("Failed to transform metrics" + ex);
                 ExitProgram(exitCode: 2);
             }
         }
@@ -103,8 +105,9 @@ namespace VsCodeMetricsTransformer
             Environment.Exit(exitCode);
         }
 
-        private static void TransformMetrics(List<CodeMetricsReportTargetsTargetModulesModule> rawModules, TransformedMetrics transformedMetrics)
+        private static void TransformMetrics(List<Module> rawModules, TransformedMetrics transformedMetrics)
         {
+            if (rawModules == null) throw new ArgumentNullException(nameof(rawModules));
             foreach (var module in rawModules)
             {
                 if (module.Metrics.Last().Value == "0")
@@ -112,41 +115,18 @@ namespace VsCodeMetricsTransformer
 // line of code is 0
                     continue;
                 }
-                var moduleMetric = new ModuleMetric
-                {
-                    Module = module.Name,
-                    MaintainabilityIndex = 0,
-                    CyclomaticComplexity = 0,
-                    ClassCoupling = 0,
-                    DepthOfInheritance = 0,
-                    LinesOfCode = 0
-                };
-                var clsCount = 0;
+                
                 if (module.Namespaces.Any())
                 {
                     foreach (var cls in module.Namespaces.SelectMany(n => n.Types))
                     {
-                        ++clsCount;
-                        var clsMetric = new ClassMetric()
-                        {
-                            Module = module.Name,
-                            Class = cls.Name,
-                            MaintainabilityIndex = 0,
-                            CyclomaticComplexity = 0,
-                            ClassCoupling = 0,
-                            DepthOfInheritance = int.Parse(cls.Metrics[3].Value),
-                            LinesOfCode = 0
-                        };
-
-                        var memberCount = 0;
                         foreach (var method in cls.Members.Where(m => !InIgnoreList(m, cls)))
                         {
-                            memberCount++;
                             var methodMetric = new MethodMetric()
                             {
                                 Module = module.Name,
                                 Class = cls.Name,
-                                DepthOfInheritance = clsMetric.DepthOfInheritance,
+                                DepthOfInheritance = int.Parse(cls.Metrics[3].Value),
                                 MethodName = method.Name,
                                 MaintainabilityIndex = int.Parse(method.Metrics[0].Value),
                                 CyclomaticComplexity = int.Parse(method.Metrics[1].Value),
@@ -154,43 +134,13 @@ namespace VsCodeMetricsTransformer
                                 LinesOfCode = int.Parse(method.Metrics[3].Value),
                             };
                             transformedMetrics.Methods.Add(methodMetric);
-                            clsMetric.MaintainabilityIndex += methodMetric.MaintainabilityIndex;
-                            clsMetric.CyclomaticComplexity += methodMetric.CyclomaticComplexity;
-                            clsMetric.ClassCoupling += methodMetric.ClassCoupling;
-                            clsMetric.LinesOfCode += methodMetric.LinesOfCode;
                         }
 
-                        if (memberCount != 0)
-                        {
-                            clsMetric.MaintainabilityIndex /= memberCount;
-                            clsMetric.CyclomaticComplexity /= memberCount;
-                            clsMetric.ClassCoupling /= memberCount;
-                        }
-                        else
-                        {
-                            clsMetric.MaintainabilityIndex = 100;
-                        }
-                        transformedMetrics.Classes.Add(clsMetric);
 
-                        moduleMetric.MaintainabilityIndex += clsMetric.MaintainabilityIndex;
-                        moduleMetric.ClassCoupling += clsMetric.ClassCoupling;
-                        moduleMetric.CyclomaticComplexity += clsMetric.CyclomaticComplexity;
-                        moduleMetric.DepthOfInheritance += clsMetric.DepthOfInheritance;
-                        moduleMetric.LinesOfCode += clsMetric.LinesOfCode;
+                        
                     }
                 }
-                if (clsCount != 0)
-                {
-                    moduleMetric.MaintainabilityIndex /= clsCount;
-                    moduleMetric.ClassCoupling /= clsCount;
-                    moduleMetric.CyclomaticComplexity /= clsCount;
-                    moduleMetric.DepthOfInheritance /= clsCount;
-                }
-                else
-                {
-                    moduleMetric.MaintainabilityIndex = 100;
-                }
-                transformedMetrics.Modules.Add(moduleMetric);
+                
             }
         }
 

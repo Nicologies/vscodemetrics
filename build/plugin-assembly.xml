@@ -15,19 +15,23 @@
          <outputDirectory>/agent</outputDirectory>
      </file>
      <file>
-         <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/VsCodeMetricsTransformer.exe</source>
-         <outputDirectory>/server</outputDirectory>
-     </file>
-     <file>
-         <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/MainPage.html</source>
+         <source>../VsCodeMetricsTransformer/MetricsProcessor/bin/Release/MainPage.html</source>
          <outputDirectory>/server</outputDirectory>
      </file>
       <file>
-          <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/CsvHelper.dll</source>
+          <source>../VsCodeMetricsTransformer/MetricsProcessor/bin/Release/CsvHelper.dll</source>
           <outputDirectory>/server</outputDirectory>
       </file>
       <file>
-          <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/MetricsDefinitions.dll</source>
+          <source>../VsCodeMetricsTransformer/MetricsProcessor/bin/Release/MetricsDefinitions.dll</source>
+          <outputDirectory>/server</outputDirectory>
+      </file>
+      <file>
+          <source>../VsCodeMetricsTransformer/MetricsProcessor/bin/Release/CommandLine.dll</source>
+          <outputDirectory>/server</outputDirectory>
+      </file>
+      <file>
+          <source>../VsCodeMetricsTransformer/MetricsProcessor/bin/Release/MetricsProcessor.exe</source>
           <outputDirectory>/server</outputDirectory>
       </file>
   </files>
