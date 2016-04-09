@@ -27,11 +27,14 @@ namespace VsCodeMetricsTransformer
                 var transformedMetrics = new TransformedMetrics();
                 TransformMetrics(rawModules, transformedMetrics);
                 var mainHtmlTemplate = new StringBuilder(Templates.GetMainHtmlTemplate());
-                FillModuleMetrics(transformedMetrics, mainHtmlTemplate);
-                FillWorstClasses(transformedMetrics, mainHtmlTemplate);
-                FillWorstMethods(transformedMetrics, mainHtmlTemplate);
+                MetricsReporter.FillModuleMetrics(transformedMetrics, mainHtmlTemplate);
+                MetricsReporter.FillWorstClasses(transformedMetrics, mainHtmlTemplate);
+                MetricsReporter.FillWorstMethods(transformedMetrics, mainHtmlTemplate);
                 var folderToSaveFile = args[1];
-                WriteToMetricsResult(folderToSaveFile, mainHtmlTemplate);
+                if (!MetricsReporter.WriteToMetricsResult(folderToSaveFile, mainHtmlTemplate))
+                {
+                    ExitProgram(exitCode: 1);
+                }
                 SaveFullListOfTheMetricsResults(folderToSaveFile, transformedMetrics);
             }
 
@@ -98,76 +101,6 @@ namespace VsCodeMetricsTransformer
                 Directory.Delete(_tempDirToUnzipMetricsResults, recursive: true);
             }
             Environment.Exit(exitCode);
-        }
-
-        private static void WriteToMetricsResult(string folderToSaveFile, StringBuilder template)
-        {
-            try
-            {
-                using (var output = new StreamWriter(folderToSaveFile))
-                {
-                    output.Write(template);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.Error.Write("Failed to save metrics data" + ex);
-                try
-                {
-                    File.Delete(folderToSaveFile);
-                }
-                catch
-                {
-                    // ignored
-                }
-                ExitProgram(exitCode: 1);
-            }
-        }
-
-        private static void FillWorstMethods(TransformedMetrics transformedMetrics, StringBuilder template)
-        {
-            var worstMethods = transformedMetrics.Methods.OrderBy(c => c.MaintainabilityIndex).Take(100).ToList();
-            var tableOfWorstMethods = new StringBuilder(Templates.TableHeaderForMethod);
-            foreach (var method in worstMethods)
-            {
-                var row = Templates.RowTemplateForMethod.Inject(method.FormatDecimalPoints());
-                tableOfWorstMethods.AppendLine(row);
-            }
-
-            var worstMethodsAreInModules = worstMethods.GroupBy(r => r.Module)
-                .OrderByDescending(x => x.Count()).Take(5)
-                .Select(x => $"<li>{x.Key}: {x.Count()} methods</li>");
-            var strWorstMethodsAreInModules = string.Join("", worstMethodsAreInModules);
-            template.Replace("{WorstMethodsAreInModules}", strWorstMethodsAreInModules);
-            template.Replace("{TableBodyOfWorstMethods}", tableOfWorstMethods.ToString());
-        }
-
-        private static void FillWorstClasses(TransformedMetrics transformedMetrics, StringBuilder template)
-        {
-            var worstClasses = transformedMetrics.Classes.OrderBy(c => c.MaintainabilityIndex).Take(100).ToList();
-            var tableOfWorstClasses = new StringBuilder(Templates.TableHeaderForClass);
-            foreach (var cls in worstClasses)
-            {
-                var row = Templates.RowTemplateForClass.Inject(cls.FormatDecimalPoints());
-                tableOfWorstClasses.AppendLine(row);
-            }
-            var worstClassesAreInModules = worstClasses.GroupBy(r => r.Module)
-                .OrderByDescending(x => x.Count()).Take(5)
-                .Select(x => $"<li>{x.Key}: {x.Count()} classes</li>");
-            var strWorstClassesAreInModules = string.Join("", worstClassesAreInModules);
-            template.Replace("{WorstClassesAreInModules}", strWorstClassesAreInModules);
-            template.Replace("{TableBodyOfWorstClasses}", tableOfWorstClasses.ToString());
-        }
-
-        private static void FillModuleMetrics(TransformedMetrics transformedMetrics, StringBuilder template)
-        {
-            var moduleTableRows = new StringBuilder(Templates.TableHeaderForModule);
-            foreach (var moduleMetric in transformedMetrics.Modules.OrderBy(r => r.MaintainabilityIndex))
-            {
-                var moduleMetricsRow = Templates.RowTemplateForModule.Inject(moduleMetric.FormatDecimalPoints());
-                moduleTableRows.AppendLine(moduleMetricsRow);
-            }
-            template.Replace("{TableBodyOfModules}", moduleTableRows.ToString());
         }
 
         private static void TransformMetrics(List<CodeMetricsReportTargetsTargetModulesModule> rawModules, TransformedMetrics transformedMetrics)
@@ -261,7 +194,7 @@ namespace VsCodeMetricsTransformer
             }
         }
 
-        private static List<CodeMetricsReportTargetsTargetModulesModule> LoadRawMetricsFromFolder(string metricResultDir)
+        private static List<Module> LoadRawMetricsFromFolder(string metricResultDir)
         {
             var files = new DirectoryInfo(metricResultDir).EnumerateFiles("*VsCodeMetricsReport.xml");
             var rawModules = new List<Module>();
