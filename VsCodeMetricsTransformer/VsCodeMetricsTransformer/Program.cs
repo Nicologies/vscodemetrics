@@ -219,6 +219,7 @@ namespace VsCodeMetricsTransformer
                             {
                                 Module = module.Name,
                                 Class = cls.Name,
+                                DepthOfInheritance = clsMetric.DepthOfInheritance,
                                 MethodName = method.Name,
                                 MaintainabilityIndex = int.Parse(method.Metrics[0].Value),
                                 CyclomaticComplexity = int.Parse(method.Metrics[1].Value),

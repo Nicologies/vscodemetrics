@@ -1,8 +1,7 @@
 namespace VsCodeMetricsTransformer.Transformed
 {
-    class MethodMetric : MetricBase
+    class MethodMetric : ClassMetric 
     {
-        public string Class { get; set; }
         public string MethodName { get; set; }
     }
 }
