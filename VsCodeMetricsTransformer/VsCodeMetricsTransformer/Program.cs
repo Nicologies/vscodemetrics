@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Xml.Serialization;
 using CsvHelper;
+using VsCodeMetricsTransformer.Transformed;
 using RawMetric = VsCodeMetricsTransformer.MetricsMetric;
 using Target = VsCodeMetricsTransformer.CodeMetricsReportTargetsTarget;
 using Module = VsCodeMetricsTransformer.CodeMetricsReportTargetsTargetModulesModule;
@@ -17,58 +18,18 @@ using Member = VsCodeMetricsTransformer.CodeMetricsReportTargetsTargetModulesMod
 
 namespace VsCodeMetricsTransformer
 {
-    class MetricBase
-    {
-        public string Module { get; set; }
-        public double MaintainabilityIndex { get; set; }
-        public double CyclomaticComplexity { get; set; }
-        public double ClassCoupling { get; set; }
-        public int LinesOfCode { get; set; }
-
-        public virtual MetricBase FormatDecimalPoints()
-        {
-            MaintainabilityIndex = Math.Round(MaintainabilityIndex, 2);
-            CyclomaticComplexity = Math.Round(CyclomaticComplexity, 2);
-            ClassCoupling = Math.Round(ClassCoupling, 2);
-            return this;
-        }
-    }
-
-    class AssemblyMetric : MetricBase
-    {
-        public double DepthOfInheritance { get; set; }
-
-        public override MetricBase FormatDecimalPoints()
-        {
-            base.FormatDecimalPoints();
-            DepthOfInheritance = Math.Round(DepthOfInheritance, 2);
-            return this;
-        }
-    }
-
-    class ClassMetric : AssemblyMetric
-    {
-        public string Class { get; set; }
-    }
-
-    class MethodMetric : MetricBase
-    {
-        public string Class { get; set; }
-        public string MethodName { get; set; }
-    }
-
     class Program
     {
         private static readonly string TableHeaderForClass = $@"
 <thead>
     <tr>
-        <th>{nameof(AssemblyMetric.Module)}</th>
+        <th>{nameof(ModuleMetric.Module)}</th>
         <th>{nameof(ClassMetric.Class)}</th>
-        <th>{nameof(AssemblyMetric.MaintainabilityIndex)}</th>
-        <th>{nameof(AssemblyMetric.CyclomaticComplexity)}</th>
-        <th>{nameof(AssemblyMetric.ClassCoupling)}</th>
-        <th>{nameof(AssemblyMetric.DepthOfInheritance)}</th>
-        <th>{nameof(AssemblyMetric.LinesOfCode)}</th>
+        <th>{nameof(ModuleMetric.MaintainabilityIndex)}</th>
+        <th>{nameof(ModuleMetric.CyclomaticComplexity)}</th>
+        <th>{nameof(ModuleMetric.ClassCoupling)}</th>
+        <th>{nameof(ModuleMetric.DepthOfInheritance)}</th>
+        <th>{nameof(ModuleMetric.LinesOfCode)}</th>
     </tr>
 </thead>
 ";
@@ -76,12 +37,12 @@ namespace VsCodeMetricsTransformer
         private static readonly string TableHeaderForModule = $@"
 <thead>
     <tr>
-        <th>{nameof(AssemblyMetric.Module)}</th>
-        <th>{nameof(AssemblyMetric.MaintainabilityIndex)}</th>
-        <th>{nameof(AssemblyMetric.CyclomaticComplexity)}</th>
-        <th>{nameof(AssemblyMetric.ClassCoupling)}</th>
-        <th>{nameof(AssemblyMetric.DepthOfInheritance)}</th>
-        <th>{nameof(AssemblyMetric.LinesOfCode)}</th>
+        <th>{nameof(ModuleMetric.Module)}</th>
+        <th>{nameof(ModuleMetric.MaintainabilityIndex)}</th>
+        <th>{nameof(ModuleMetric.CyclomaticComplexity)}</th>
+        <th>{nameof(ModuleMetric.ClassCoupling)}</th>
+        <th>{nameof(ModuleMetric.DepthOfInheritance)}</th>
+        <th>{nameof(ModuleMetric.LinesOfCode)}</th>
     </tr>
 </thead>
 ";
@@ -89,57 +50,51 @@ namespace VsCodeMetricsTransformer
         private static readonly string TableHeaderForMethod = $@"
 <thead>
     <tr>
-        <th>{nameof(AssemblyMetric.Module)}</th>
+        <th>{nameof(ModuleMetric.Module)}</th>
         <th>{nameof(ClassMetric.Class)}</th>
         <th>{nameof(MethodMetric.MethodName)}</th>
-        <th>{nameof(AssemblyMetric.MaintainabilityIndex)}</th>
-        <th>{nameof(AssemblyMetric.CyclomaticComplexity)}</th>
-        <th>{nameof(AssemblyMetric.ClassCoupling)}</th>
-        <th>{nameof(AssemblyMetric.LinesOfCode)}</th>
+        <th>{nameof(ModuleMetric.MaintainabilityIndex)}</th>
+        <th>{nameof(ModuleMetric.CyclomaticComplexity)}</th>
+        <th>{nameof(ModuleMetric.ClassCoupling)}</th>
+        <th>{nameof(ModuleMetric.LinesOfCode)}</th>
     </tr>
 </thead>
 ";
 
         private static readonly string RowTemplateForModule = $@"
 <tr>
-    <td>{{{nameof(AssemblyMetric.Module)}}}</td>
-    <td>{{{nameof(AssemblyMetric.MaintainabilityIndex)}}}</td>
-    <td>{{{nameof(AssemblyMetric.CyclomaticComplexity)}}}</td>
-    <td>{{{nameof(AssemblyMetric.ClassCoupling)}}}</td>
-    <td>{{{nameof(AssemblyMetric.DepthOfInheritance)}}}</td>
-    <td>{{{nameof(AssemblyMetric.LinesOfCode)}}}</td>
+    <td>{{{nameof(ModuleMetric.Module)}}}</td>
+    <td>{{{nameof(ModuleMetric.MaintainabilityIndex)}}}</td>
+    <td>{{{nameof(ModuleMetric.CyclomaticComplexity)}}}</td>
+    <td>{{{nameof(ModuleMetric.ClassCoupling)}}}</td>
+    <td>{{{nameof(ModuleMetric.DepthOfInheritance)}}}</td>
+    <td>{{{nameof(ModuleMetric.LinesOfCode)}}}</td>
 </tr>
 ";
         private static readonly string RowTemplateForClass = $@"
 <tr>
-    <td>{{{nameof(AssemblyMetric.Module)}}}</td>
+    <td>{{{nameof(ModuleMetric.Module)}}}</td>
     <td>{{{nameof(ClassMetric.Class)}}}</td>
-    <td>{{{nameof(AssemblyMetric.MaintainabilityIndex)}}}</td>
-    <td>{{{nameof(AssemblyMetric.CyclomaticComplexity)}}}</td>
-    <td>{{{nameof(AssemblyMetric.ClassCoupling)}}}</td>
-    <td>{{{nameof(AssemblyMetric.DepthOfInheritance)}}}</td>
-    <td>{{{nameof(AssemblyMetric.LinesOfCode)}}}</td>
+    <td>{{{nameof(ModuleMetric.MaintainabilityIndex)}}}</td>
+    <td>{{{nameof(ModuleMetric.CyclomaticComplexity)}}}</td>
+    <td>{{{nameof(ModuleMetric.ClassCoupling)}}}</td>
+    <td>{{{nameof(ModuleMetric.DepthOfInheritance)}}}</td>
+    <td>{{{nameof(ModuleMetric.LinesOfCode)}}}</td>
 </tr>
 ";
         private static readonly string RowTemplateForMethod = $@"
 <tr>
-    <td>{{{nameof(AssemblyMetric.Module)}}}</td>
+    <td>{{{nameof(ModuleMetric.Module)}}}</td>
     <td>{{{nameof(ClassMetric.Class)}}}</td>
     <td>{{{nameof(MethodMetric.MethodName)}}}</td>
-    <td>{{{nameof(AssemblyMetric.MaintainabilityIndex)}}}</td>
-    <td>{{{nameof(AssemblyMetric.CyclomaticComplexity)}}}</td>
-    <td>{{{nameof(AssemblyMetric.ClassCoupling)}}}</td>
-    <td>{{{nameof(AssemblyMetric.LinesOfCode)}}}</td>
+    <td>{{{nameof(ModuleMetric.MaintainabilityIndex)}}}</td>
+    <td>{{{nameof(ModuleMetric.CyclomaticComplexity)}}}</td>
+    <td>{{{nameof(ModuleMetric.ClassCoupling)}}}</td>
+    <td>{{{nameof(ModuleMetric.LinesOfCode)}}}</td>
 </tr>
 ";
         private static string _tempDirToUnzipMetricsResults;
 
-        class TransformedMetrics
-        {
-            public readonly List<AssemblyMetric> Modules = new List<AssemblyMetric>();
-            public readonly List<ClassMetric> Classes = new List<ClassMetric>();
-            public readonly List<MethodMetric> Methods = new List<MethodMetric>();
-        }
         private static void Main(string[] args)
         {
             if (args.Length != 2)
@@ -293,7 +248,7 @@ namespace VsCodeMetricsTransformer
 // line of code is 0
                     continue;
                 }
-                var moduleMetric = new AssemblyMetric
+                var moduleMetric = new ModuleMetric
                 {
                     Module = module.Name,
                     MaintainabilityIndex = 0,

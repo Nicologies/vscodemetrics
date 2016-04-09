@@ -50,9 +50,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Transformed\ModuleMetric.cs" />
+    <Compile Include="Transformed\ClassMetric.cs" />
+    <Compile Include="Transformed\MethodMetric.cs" />
+    <Compile Include="Transformed\MetricBase.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StringInjectExtension.cs" />
+    <Compile Include="Transformed\TransformedMetrics.cs" />
     <Compile Include="VsCodeMetrics.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
