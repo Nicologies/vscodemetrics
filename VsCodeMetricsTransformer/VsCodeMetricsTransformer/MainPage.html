@@ -7,9 +7,11 @@
 
 <div>
     <p>Click <a href='${currentFolder}/FullList.zip'>Here</a> to Download the CSV file of the Full Metrics Result.</p>
-    <h1>Assemblies</h1>
-    <table id="vscodemetrics_modules" class="display" cellspacing="0" width="100%">
-        {TableBodyOfModules}
+    <h1>Top 100 Least Maintainable Methods</h1>
+    Most of these Methods are in:
+    <ul>{WorstMethodsAreInModules}</ul>
+    <table id="vscodemetrics_worstmethods" class="display" cellspacing="0" width="100%">
+        {TableBodyOfWorstMethods}
     </table>
 
     <h1>Top 100 Least Maintainable Classes</h1>
@@ -19,11 +21,9 @@
         {TableBodyOfWorstClasses}
     </table>
 
-    <h1>Top 100 Least Maintainable Methods</h1>
-    Most of these Methods are in:
-    <ul>{WorstMethodsAreInModules}</ul>
-    <table id="vscodemetrics_worstmethods" class="display" cellspacing="0" width="100%">
-        {TableBodyOfWorstMethods}
+    <h1>Assemblies</h1>
+    <table id="vscodemetrics_modules" class="display" cellspacing="0" width="100%">
+        {TableBodyOfModules}
     </table>
 </div>
 
