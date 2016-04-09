@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 
-namespace VsCodeMetricsTransformer.Transformed
+namespace MetricsDefinitions
 {
-    class TransformedMetrics
+    public class TransformedMetrics
     {
         public readonly List<ModuleMetric> Modules = new List<ModuleMetric>();
         public readonly List<ClassMetric> Classes = new List<ClassMetric>();

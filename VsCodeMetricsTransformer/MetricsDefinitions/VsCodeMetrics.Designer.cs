@@ -5,7 +5,7 @@
 //  </auto-generated>
 // ------------------------------------------------------------------------------
 #pragma warning disable
-namespace VsCodeMetricsTransformer
+namespace MetricsDefinitions
 {
     using System;
     using System.Diagnostics;

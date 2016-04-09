@@ -1,8 +1,8 @@
 using System;
 
-namespace VsCodeMetricsTransformer.Transformed
+namespace MetricsDefinitions
 {
-    class MetricBase
+    public class MetricBase
     {
         public string Module { get; set; }
         public double MaintainabilityIndex { get; set; }

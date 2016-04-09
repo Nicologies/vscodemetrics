@@ -3,24 +3,18 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Xml.Serialization;
 using CsvHelper;
-using VsCodeMetricsTransformer.Transformed;
-using RawMetric = VsCodeMetricsTransformer.MetricsMetric;
-using Target = VsCodeMetricsTransformer.CodeMetricsReportTargetsTarget;
-using Module = VsCodeMetricsTransformer.CodeMetricsReportTargetsTargetModulesModule;
-using Namespace = VsCodeMetricsTransformer.CodeMetricsReportTargetsTargetModulesModuleNamespacesNamespace;
-using Namespaces = VsCodeMetricsTransformer.CodeMetricsReportTargetsTargetModulesModuleNamespacesNamespace;
-using ClassType = VsCodeMetricsTransformer.CodeMetricsReportTargetsTargetModulesModuleNamespacesNamespaceTypesType;
-using Member = VsCodeMetricsTransformer.CodeMetricsReportTargetsTargetModulesModuleNamespacesNamespaceTypesTypeMembersMember;
+using MetricsDefinitions;
+using Module = MetricsDefinitions.CodeMetricsReportTargetsTargetModulesModule;
+using ClassType = MetricsDefinitions.CodeMetricsReportTargetsTargetModulesModuleNamespacesNamespaceTypesType;
+using Member = MetricsDefinitions.CodeMetricsReportTargetsTargetModulesModuleNamespacesNamespaceTypesTypeMembersMember;
 
 namespace VsCodeMetricsTransformer
 {
     class Program
     {
-       
         private static string _tempDirToUnzipMetricsResults;
 
         private static void Main(string[] args)

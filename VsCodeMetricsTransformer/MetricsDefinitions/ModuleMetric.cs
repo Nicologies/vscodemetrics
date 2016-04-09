@@ -1,8 +1,8 @@
 using System;
 
-namespace VsCodeMetricsTransformer.Transformed
+namespace MetricsDefinitions
 {
-    class ModuleMetric : MetricBase
+    public class ModuleMetric : MetricBase
     {
         public double DepthOfInheritance { get; set; }
 

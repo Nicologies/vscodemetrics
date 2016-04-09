@@ -34,6 +34,10 @@
         <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/CsvHelper.dll</source>
         <outputDirectory>/lib</outputDirectory>
     </file>
+    <file>
+        <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/MetricsDefinitions.dll</source>
+        <outputDirectory>/lib</outputDirectory>
+    </file>
   </files>
   
   <moduleSets>

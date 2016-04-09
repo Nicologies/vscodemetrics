@@ -4,18 +4,16 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B0BA9199-5814-4375-A18D-1A40DED9AEBE}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{87772D9F-F7A3-4199-8DA2-5F7BE9FAE39B}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>VsCodeMetricsTransformer</RootNamespace>
-    <AssemblyName>VsCodeMetricsTransformer</AssemblyName>
+    <RootNamespace>MetricsDefinitions</RootNamespace>
+    <AssemblyName>MetricsDefinitions</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -25,7 +23,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -34,14 +31,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="CsvHelper, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8c4959082be5c823, processorArchitecture=MSIL">
-      <HintPath>..\packages\CsvHelper.2.13.5.0\lib\net40-client\CsvHelper.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.IO.Compression" />
-    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -50,25 +41,35 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Templates.cs" />
-    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="StringInjectExtension.cs" />
+    <Compile Include="ClassMetric.cs" />
+    <Compile Include="MethodMetric.cs" />
+    <Compile Include="MetricBase.cs" />
+    <Compile Include="ModuleMetric.cs" />
+    <Compile Include="TransformedMetrics.cs" />
+    <Compile Include="VsCodeMetrics.Designer.cs">
+      <DependentUpon>VsCodeMetrics.xsd</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-    <None Include="packages.config" />
+    <None Include="VsCodeMetrics.xsc">
+      <DependentUpon>VsCodeMetrics.xsd</DependentUpon>
+    </None>
+    <None Include="VsCodeMetrics.xsd">
+      <Generator>xsd2codecustomtool</Generator>
+      <LastGenOutput>VsCodeMetrics.Designer.cs</LastGenOutput>
+      <CustomToolNamespace>VsCodeMetricsTransformer</CustomToolNamespace>
+    </None>
+    <None Include="VsCodeMetrics.xss">
+      <DependentUpon>VsCodeMetrics.xsd</DependentUpon>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="MainPage.html">
+    <None Include="VsCodeMetrics.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\MetricsDefinitions\MetricsDefinitions.csproj">
-      <Project>{87772d9f-f7a3-4199-8da2-5f7be9fae39b}</Project>
-      <Name>MetricsDefinitions</Name>
-    </ProjectReference>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
