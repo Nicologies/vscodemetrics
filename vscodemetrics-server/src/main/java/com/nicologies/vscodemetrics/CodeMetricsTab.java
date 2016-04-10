@@ -3,8 +3,11 @@ package com.nicologies.vscodemetrics;
 import com.intellij.openapi.diagnostic.Logger;
 import com.nicologies.vscodemetrics.common.ArtifactsUtil;
 import com.nicologies.vscodemetrics.common.CodeMetricConstants;
+import com.nicologies.vscodemetrics.common.PathUtils;
+import jetbrains.buildServer.agentServer.Server;
 import jetbrains.buildServer.serverSide.SBuild;
 import jetbrains.buildServer.serverSide.SBuildServer;
+import jetbrains.buildServer.serverSide.ServerPaths;
 import jetbrains.buildServer.web.openapi.PagePlaces;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
 import jetbrains.buildServer.web.openapi.ViewLogTab;
@@ -23,11 +26,15 @@ import java.util.concurrent.TimeUnit;
 public class CodeMetricsTab extends ViewLogTab {
     private static final Logger LOG = jetbrains.buildServer.log.Loggers.SERVER;
     private PluginDescriptor _pluginDescriptor;
+    private ServerPaths _serverPaths;
+
     public CodeMetricsTab(@NotNull PagePlaces pagePlaces,
                           @NotNull SBuildServer server,
-                          @NotNull PluginDescriptor pluginDescriptor){
+                          @NotNull PluginDescriptor pluginDescriptor,
+                          @NotNull ServerPaths serverPaths){
         super("Code Metrics", "com.nicologies.vscodemetrics", pagePlaces, server);
         _pluginDescriptor = pluginDescriptor;
+        _serverPaths = serverPaths;
         setIncludeUrl(_pluginDescriptor.getPluginResourcesPath("/metricsView.jsp"));
     }
 
@@ -43,9 +50,13 @@ public class CodeMetricsTab extends ViewLogTab {
                 String currentFolder = "/repository/download/" + build.getBuildTypeExternalId().toString()
                         +"/" + build.getBuildId() + ":id/" + ArtifactsUtil.getInternalArtifactFolder();
 
+                File curBuildPluginDataFolder = PathUtils.GetPluginDataFolder(_serverPaths.getPluginDataDirectory(),
+                        build.getBranch().getName(), build.getBuildId());
+
                 fileContent = fileContent
                         .replace("${teamcityPluginResourcesPath}", _pluginDescriptor.getPluginResourcesPath())
-                        .replace("${currentFolder}", currentFolder);
+                        .replace("${currentFolder}", currentFolder)
+                        .replace("${pluginDataFolderForThisBuild}", curBuildPluginDataFolder.getAbsolutePath());
             } catch (IOException e) {
                 LOG.error("unable to read file", e);
             }
@@ -76,7 +87,7 @@ public class CodeMetricsTab extends ViewLogTab {
         if(!available) {
             Date finishedDate = build.getFinishDate();
             if (finishedDate != null && getDateDiff(finishedDate, new Date(), TimeUnit.MINUTES) > 1) {
-                MetricsProcessor metricsProcessor = new MetricsProcessor(myServer);;
+                MetricsProcessor metricsProcessor = new MetricsProcessor(myServer, _serverPaths);
                 metricsProcessor.ProcessAsync(build);
             }
         }

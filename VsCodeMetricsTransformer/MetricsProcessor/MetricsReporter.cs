@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -10,7 +11,15 @@ namespace MetricsProcessor
     {
         public static void FillWorstMethods(TransformedMetrics transformedMetrics, StringBuilder template)
         {
-            var worstMethods = transformedMetrics.Methods.OrderBy(c => c.MaintainabilityIndex).Take(100).ToList();
+            InternalFillWorstMethods(transformedMetrics.Methods, template, "{WorstMethodsAreInModules}",
+                "{TableBodyOfWorstMethods}");
+        }
+
+        private static void InternalFillWorstMethods(IEnumerable<MethodMetric> methods,
+            StringBuilder template, string placeHolderForWorstMethodsInModules,
+            string placeHolderForWorstMethodTable)
+        {
+            var worstMethods = methods.OrderBy(c => c.MaintainabilityIndex).Take(100).ToList();
             var tableOfWorstMethods = new StringBuilder(Templates.TableHeaderForMethod);
             foreach (var method in worstMethods)
             {
@@ -22,8 +31,22 @@ namespace MetricsProcessor
                 .OrderByDescending(x => x.Count()).Take(5)
                 .Select(x => $"<li>{x.Key}: {x.Count()} methods</li>");
             var strWorstMethodsAreInModules = string.Join("", worstMethodsAreInModules);
-            template.Replace("{WorstMethodsAreInModules}", strWorstMethodsAreInModules);
-            template.Replace("{TableBodyOfWorstMethods}", tableOfWorstMethods.ToString());
+            template.Replace(placeHolderForWorstMethodsInModules, strWorstMethodsAreInModules);
+            template.Replace(placeHolderForWorstMethodTable, tableOfWorstMethods.ToString());
+        }
+
+        public static void FillWorstNewMethods(IEnumerable<MethodMetric> methods, StringBuilder template)
+        {
+            InternalFillWorstMethods(methods, template, "{WorstNewMethodsAreInModules}",
+                 "{TableBodyOfWorstNewMethods}");
+
+            SetVisibilityOfWorstNewMethods(template, visible: true);
+        }
+
+        public static void SetVisibilityOfWorstNewMethods(StringBuilder template, bool visible)
+        {
+            var visibleCssClass = visible ? "newWorstMethodsVisible" : "hidden";
+            template.Replace("${visibilityOfWorstNewMethods}", visibleCssClass);
         }
 
         public static void FillWorstClasses(TransformedMetrics transformedMetrics, StringBuilder template)
@@ -62,6 +85,10 @@ namespace MetricsProcessor
                 using (var output = new StreamWriter(tempFile, append: false))
                 {
                     output.Write(template);
+                }
+                if (File.Exists(outputFile))
+                {
+                    File.Delete(outputFile);
                 }
                 File.Move(tempFile, outputFile);
                 return true;

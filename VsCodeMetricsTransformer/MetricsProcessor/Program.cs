@@ -13,10 +13,13 @@ namespace MetricsProcessor
     {
         [Option('i', "input", Required = true,
             HelpText = "Input zip file to be processed.")]
-        public string InputFile { get; set; }
+        public string MetricsZip { get; set; }
 
         [Option('o', "output", Required = true, HelpText = "output file name")]
         public string OutputFile { get; set; }
+
+        [Option('p', "previous", Required = false, HelpText = "Previous Metrics to Compare. Zip file")]
+        public string PreviousMetricsZip { get; set; }
 
         [HelpOption]
         public string GetUsage()
@@ -28,8 +31,6 @@ namespace MetricsProcessor
 
     class Program
     {
-        private static string _tempDirToUnzipMetrics;
-
         static void Main(string[] args)
         {
             var options = new Options();
@@ -38,117 +39,143 @@ namespace MetricsProcessor
                 Console.Error.Write("Invalid Parameters");
                 Environment.Exit(1);
             }
-            var metricsResult = options.InputFile;
-            if (!UnzipMetrics(metricsResult))
+
+            var transformedMetrics = LoadMetrics(options.MetricsZip);
+            if (transformedMetrics == null)
             {
-                ExitProgram(exitCode: 1);
+                Environment.Exit(1);
             }
-            var transformedMetrics= new TransformedMetrics();
-            var metricsResultFile = Path.Combine(_tempDirToUnzipMetrics,
-                Path.GetFileNameWithoutExtension(options.InputFile) + ".csv");
-            using (var stream = new StreamReader(metricsResultFile))
+            var mainHtmlTemplate = new StringBuilder(Templates.GetMainHtmlTemplate());
+            MetricsReporter.FillModuleMetrics(transformedMetrics, mainHtmlTemplate);
+            MetricsReporter.FillWorstClasses(transformedMetrics, mainHtmlTemplate);
+            MetricsReporter.FillWorstMethods(transformedMetrics, mainHtmlTemplate);
+            var hasNewMethods = false;
+            if (!string.IsNullOrWhiteSpace(options.PreviousMetricsZip))
             {
-                using (var reader = new CsvHelper.CsvReader(stream))
+                var previousMetrics = LoadMetrics(options.PreviousMetricsZip);
+                if (previousMetrics != null)
                 {
-                    foreach (var methodMetricsInModule in reader.GetRecords<MethodMetric>().GroupBy(r => r.Module))
+                    var newMethods = transformedMetrics.Methods.Except(previousMetrics.Methods,
+                        new MethodMetric.MethodMetricComparer()).ToList();
+                    if (newMethods.Any())
                     {
-                        var moduleMetric = new ModuleMetric
+                        hasNewMethods = true;
+                        MetricsReporter.FillWorstNewMethods(newMethods, mainHtmlTemplate);
+                    }
+                }
+            }
+            if (!hasNewMethods)
+            {
+                MetricsReporter.SetVisibilityOfWorstNewMethods(mainHtmlTemplate, visible: false);
+            }
+
+            if (!MetricsReporter.WriteToMetricsResult(options.OutputFile, mainHtmlTemplate))
+            {
+                Environment.Exit(1);
+            }
+        }
+
+        private static TransformedMetrics LoadMetrics(string metricsZipFile)
+        {
+            var tempDirToUnzipMetrics = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(tempDirToUnzipMetrics);
+            try
+            {
+                if (!UnzipMetrics(metricsZipFile, tempDirToUnzipMetrics))
+                {
+                    return null;
+                }
+                var transformedMetrics = new TransformedMetrics();
+                var metricsResultFile = Path.Combine(tempDirToUnzipMetrics,
+                    Path.GetFileNameWithoutExtension(metricsZipFile) + ".csv");
+                using (var stream = new StreamReader(metricsResultFile))
+                {
+                    using (var reader = new CsvHelper.CsvReader(stream))
+                    {
+                        foreach (var methodMetricsInModule in reader.GetRecords<MethodMetric>().GroupBy(r => r.Module))
                         {
-                            Module = methodMetricsInModule.Key,
-                            MaintainabilityIndex = 0,
-                            CyclomaticComplexity = 0,
-                            ClassCoupling = 0,
-                            DepthOfInheritance = 0,
-                            LinesOfCode = 0
-                        };
-                        var clsCount = 0;
-                        foreach (var methodMetricInClass in methodMetricsInModule.GroupBy(r => r.Class))
-                        {
-                            ++clsCount;
-                            var clsMetric = new ClassMetric()
+                            var moduleMetric = new ModuleMetric
                             {
-                                Module = moduleMetric.Module,
-                                Class = methodMetricInClass.Key,
+                                Module = methodMetricsInModule.Key,
                                 MaintainabilityIndex = 0,
                                 CyclomaticComplexity = 0,
                                 ClassCoupling = 0,
                                 DepthOfInheritance = 0,
                                 LinesOfCode = 0
                             };
-
-                            var memberCount = 0;
-                            foreach (var methodMetric in methodMetricInClass)
+                            var clsCount = 0;
+                            foreach (var methodMetricInClass in methodMetricsInModule.GroupBy(r => r.Class))
                             {
-                                ++memberCount;
-                                transformedMetrics.Methods.Add(methodMetric);
-                                clsMetric.MaintainabilityIndex += methodMetric.MaintainabilityIndex;
-                                clsMetric.CyclomaticComplexity += methodMetric.CyclomaticComplexity;
-                                clsMetric.ClassCoupling += methodMetric.ClassCoupling;
-                                clsMetric.LinesOfCode += methodMetric.LinesOfCode;
+                                ++clsCount;
+                                var clsMetric = new ClassMetric()
+                                {
+                                    Module = moduleMetric.Module,
+                                    Class = methodMetricInClass.Key,
+                                    MaintainabilityIndex = 0,
+                                    CyclomaticComplexity = 0,
+                                    ClassCoupling = 0,
+                                    DepthOfInheritance = 0,
+                                    LinesOfCode = 0
+                                };
+
+                                var memberCount = 0;
+                                foreach (var methodMetric in methodMetricInClass)
+                                {
+                                    ++memberCount;
+                                    transformedMetrics.Methods.Add(methodMetric);
+                                    clsMetric.MaintainabilityIndex += methodMetric.MaintainabilityIndex;
+                                    clsMetric.CyclomaticComplexity += methodMetric.CyclomaticComplexity;
+                                    clsMetric.ClassCoupling += methodMetric.ClassCoupling;
+                                    clsMetric.LinesOfCode += methodMetric.LinesOfCode;
+                                }
+
+                                if (memberCount != 0)
+                                {
+                                    clsMetric.MaintainabilityIndex /= memberCount;
+                                    clsMetric.CyclomaticComplexity /= memberCount;
+                                    clsMetric.ClassCoupling /= memberCount;
+                                    clsMetric.DepthOfInheritance = methodMetricInClass.First().DepthOfInheritance;
+                                }
+                                else
+                                {
+                                    clsMetric.MaintainabilityIndex = 100;
+                                }
+                                transformedMetrics.Classes.Add(clsMetric);
+                                moduleMetric.MaintainabilityIndex += clsMetric.MaintainabilityIndex;
+                                moduleMetric.ClassCoupling += clsMetric.ClassCoupling;
+                                moduleMetric.CyclomaticComplexity += clsMetric.CyclomaticComplexity;
+                                moduleMetric.DepthOfInheritance += clsMetric.DepthOfInheritance;
+                                moduleMetric.LinesOfCode += clsMetric.LinesOfCode;
                             }
 
-                            if (memberCount != 0)
+                            if (clsCount != 0)
                             {
-                                clsMetric.MaintainabilityIndex /= memberCount;
-                                clsMetric.CyclomaticComplexity /= memberCount;
-                                clsMetric.ClassCoupling /= memberCount;
-                                clsMetric.DepthOfInheritance = methodMetricInClass.First().DepthOfInheritance;
+                                moduleMetric.MaintainabilityIndex /= clsCount;
+                                moduleMetric.ClassCoupling /= clsCount;
+                                moduleMetric.CyclomaticComplexity /= clsCount;
+                                moduleMetric.DepthOfInheritance /= clsCount;
                             }
                             else
                             {
-                                clsMetric.MaintainabilityIndex = 100;
+                                moduleMetric.MaintainabilityIndex = 100;
                             }
-                            transformedMetrics.Classes.Add(clsMetric);
-                            moduleMetric.MaintainabilityIndex += clsMetric.MaintainabilityIndex;
-                            moduleMetric.ClassCoupling += clsMetric.ClassCoupling;
-                            moduleMetric.CyclomaticComplexity += clsMetric.CyclomaticComplexity;
-                            moduleMetric.DepthOfInheritance += clsMetric.DepthOfInheritance;
-                            moduleMetric.LinesOfCode += clsMetric.LinesOfCode;
+                            transformedMetrics.Modules.Add(moduleMetric);
                         }
-
-                        if (clsCount != 0)
-                        {
-                            moduleMetric.MaintainabilityIndex /= clsCount;
-                            moduleMetric.ClassCoupling /= clsCount;
-                            moduleMetric.CyclomaticComplexity /= clsCount;
-                            moduleMetric.DepthOfInheritance /= clsCount;
-                        }
-                        else
-                        {
-                            moduleMetric.MaintainabilityIndex = 100;
-                        }
-                        transformedMetrics.Modules.Add(moduleMetric);
                     }
                 }
+                return transformedMetrics;
             }
-            var mainHtmlTemplate = new StringBuilder(Templates.GetMainHtmlTemplate());
-            MetricsReporter.FillModuleMetrics(transformedMetrics, mainHtmlTemplate);
-            MetricsReporter.FillWorstClasses(transformedMetrics, mainHtmlTemplate);
-            MetricsReporter.FillWorstMethods(transformedMetrics, mainHtmlTemplate);
-            if (!MetricsReporter.WriteToMetricsResult(options.OutputFile, mainHtmlTemplate))
+            finally
             {
-                ExitProgram(exitCode: 1);
+                Directory.Delete(tempDirToUnzipMetrics, recursive: true); 
             }
-
-            ExitProgram(exitCode: 0);
         }
 
-        private static void ExitProgram(int exitCode)
-        {
-            if (Directory.Exists(_tempDirToUnzipMetrics))
-            {
-                Directory.Delete(_tempDirToUnzipMetrics, recursive: true);
-            }
-            Environment.ExitCode = 1;
-        }
-
-        private static bool UnzipMetrics(string metricsResult)
+        private static bool UnzipMetrics(string metricsResult, string unZipTo)
         {
             try
             {
-                _tempDirToUnzipMetrics = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                Directory.CreateDirectory(_tempDirToUnzipMetrics);
-                ZipFile.ExtractToDirectory(metricsResult, _tempDirToUnzipMetrics);
+                ZipFile.ExtractToDirectory(metricsResult, unZipTo);
                 return true;
             }
             catch (Exception ex)
