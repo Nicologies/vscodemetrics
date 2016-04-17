@@ -38,6 +38,10 @@
         <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/Commandline.dll</source>
         <outputDirectory>/lib</outputDirectory>
     </file>
+    <file>
+        <source>../VsCodeMetricsTransformer/VsCodeMetricsTransformer/bin/Release/MetricsStorage.dll</source>
+        <outputDirectory>/lib</outputDirectory>
+    </file>
   </files>
   
   <moduleSets>

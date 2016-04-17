@@ -1,23 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Xml.Serialization;
 using CommandLine;
 using CommandLine.Text;
-using CsvHelper;
 using MetricsDefinitions;
 using Module = MetricsDefinitions.CodeMetricsReportTargetsTargetModulesModule;
 using ClassType = MetricsDefinitions.CodeMetricsReportTargetsTargetModulesModuleNamespacesNamespaceTypesType;
 using Member = MetricsDefinitions.CodeMetricsReportTargetsTargetModulesModuleNamespacesNamespaceTypesTypeMembersMember;
+using MetricsStorage;
 
 namespace VsCodeMetricsTransformer
 {
     class Options
     {
         [Option('i', "input", Required = true,
-            HelpText = "Input zip file or folder to be processed.")]
+            HelpText = "Input folder to be processed.")]
         public string InputFile { get; set; }
 
         [Option('o', "output", Required = true, HelpText = "output file name")]
@@ -43,8 +42,7 @@ namespace VsCodeMetricsTransformer
             }
             try
             {
-                var metricResultDir = ExtractMetricsResultsIfZipped(options.InputFile);
-                var rawModules = LoadRawMetricsFromFolder(metricResultDir);
+                var rawModules = LoadRawMetricsFromFolder(options.InputFile);
                 var transformedMetrics = new TransformedMetrics();
                 TransformMetrics(rawModules, transformedMetrics);
                 SaveFullListOfTheMetricsResults(options.OutputFile, transformedMetrics);
@@ -58,36 +56,12 @@ namespace VsCodeMetricsTransformer
             ExitProgram(exitCode: 0);
         }
 
-        private static string ExtractMetricsResultsIfZipped(string metricsResultFileOrFolder)
-        {
-            _tempDirToUnzipMetricsResults = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            Directory.CreateDirectory(_tempDirToUnzipMetricsResults);
-            var metricResultDir = _tempDirToUnzipMetricsResults;
-            if (metricsResultFileOrFolder.EndsWith(".zip"))
-            {
-                ZipFile.ExtractToDirectory(metricsResultFileOrFolder, _tempDirToUnzipMetricsResults);
-            }
-            else
-            {
-                metricResultDir = metricsResultFileOrFolder;
-            }
-            return metricResultDir;
-        }
-
         private static void SaveFullListOfTheMetricsResults(string outputFile, 
             TransformedMetrics transformedMetrics)
         {
             try
             {
-                using (var stream = new StreamWriter(outputFile))
-                {
-                    var writer = new CsvWriter(stream);
-                    writer.WriteHeader<MethodMetric>();
-                    foreach (var method in transformedMetrics.Methods)
-                    {
-                        writer.WriteRecord(method);
-                    }
-                }
+                MetricsStorageHelper.Save(transformedMetrics, outputFile);
             }
             catch (Exception ex)
             {
