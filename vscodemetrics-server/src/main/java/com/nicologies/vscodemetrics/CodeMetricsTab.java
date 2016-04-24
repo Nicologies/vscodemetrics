@@ -4,7 +4,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.nicologies.vscodemetrics.common.ArtifactsUtil;
 import com.nicologies.vscodemetrics.common.CodeMetricConstants;
 import com.nicologies.vscodemetrics.common.PathUtils;
-import jetbrains.buildServer.agentServer.Server;
 import jetbrains.buildServer.serverSide.SBuild;
 import jetbrains.buildServer.serverSide.SBuildServer;
 import jetbrains.buildServer.serverSide.ServerPaths;

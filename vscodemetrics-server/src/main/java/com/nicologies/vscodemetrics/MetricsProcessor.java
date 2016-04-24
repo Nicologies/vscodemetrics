@@ -79,11 +79,14 @@ public class MetricsProcessor extends BuildServerAdapter {
                 new String[0], SystemInfo.isFileSystemCaseSensitive);
         boolean xmlResultReady = false;
         try {
-            File[] files = finder.findFiles(new File(build.getArtifactsDirectory(), ArtifactsUtil.getInternalArtifactPath("")));
-            xmlResultReady = files.length > 0;
+            File folder = new File(build.getArtifactsDirectory(), ArtifactsUtil.getInternalArtifactPath(""));
+            if(folder.exists()) {
+                File[] files = finder.findFiles(folder);
+                xmlResultReady = files.length > 0;
+            }
         } catch (IOException e) {
-            e.printStackTrace();
-            LOG.error("Unable to get code analysis result", e);
+            //e.printStackTrace();
+            //LOG.error("Unable to get code analysis result", e);
         }
         if (xmlResultReady && !_generatingReports.contains(build.getBuildId())) {
             ProcessAsync(build);
